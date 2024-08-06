@@ -1,10 +1,9 @@
 import numpy as np
-from Functions.py_functions.car_configuration import Car
-from Functions.py_functions.steady_state_solver.sss import Steady_State_Solver
-from Functions.py_functions.steady_state_solver.iterative import Iterative_Solver
+from toolkit.cars.car_configuration import Car
+from toolkit.steady_state_solver import Steady_State_Solver, Iterative_Solver
 from scipy.optimize import minimize
-from Functions.py_functions.constants import G
-from Functions.py_functions.maths import powspace
+from toolkit.common.constants import G
+from toolkit.common.maths import powspace
 
 class LAS:
     def __init__(self, solver: Steady_State_Solver = Iterative_Solver()):

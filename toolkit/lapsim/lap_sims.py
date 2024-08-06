@@ -1,6 +1,6 @@
 from sim_qss import sim_qss
-from car_configuration import Car, MMD_3D_Graphs
-from gps_importer import *
+from toolkit.cars.car_configuration import Car, MMD_3D_Graphs
+from toolkit.lap.gps_importer import *
 from las_solvers.las import LAS
 import numpy as np
 from sim_qts import sim_qts
@@ -8,9 +8,9 @@ import plotly.graph_objects as go
 import time
 from plotly.subplots import make_subplots
 import plotly.express as px
-from constants import *
+from toolkit.common.constants import *
 from scipy.spatial import KDTree
-from Functions.py_functions.las_solvers.las import LAS
+from toolkit.las_solvers.las import LAS
 
 def find_closest_kd(tree, points, ax, ay, yaw):
     """

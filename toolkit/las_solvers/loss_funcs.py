@@ -1,4 +1,4 @@
-from Functions.py_functions.car_configuration import Car
+from toolkit.cars.car_configuration import Car
 from .las import LAS
 import numpy as np
 

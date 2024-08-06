@@ -1,10 +1,10 @@
-from car_configuration import Car
-from gps_importer import Track
+from toolkit.cars.car_configuration import Car
+from toolkit.lap.gps_importer import Track
 import numpy as np
 import time
 from numba import njit
-from constants import *
-from Functions.py_functions.las_solvers.las import LAS
+from toolkit.common.constants import *
+from toolkit.las_solvers.las import LAS
 from scipy.signal import butter, filtfilt
 
 @njit

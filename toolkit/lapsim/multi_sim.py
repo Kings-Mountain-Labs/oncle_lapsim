@@ -1,18 +1,18 @@
 from sim_qss import sim_qss
-from car_configuration import Car
-from gps_importer import *
+from toolkit.cars.car_configuration import Car
+from toolkit.lap.gps_importer import *
 import numpy as np
 from sim_qts import sim_qts
 import plotly.graph_objects as go
 import time
 from plotly.subplots import make_subplots
 import plotly.express as px
-from constants import *
+from toolkit.common.constants import *
 from multiprocessing import Pool
 import copy
 from tqdm.notebook import tqdm
 import os
-from Functions.py_functions.las_solvers.las import LAS
+from toolkit.las_solvers.las import LAS
   
 def calculate_lap_times(car_tracks): # car_tracks is a tuple of (car, tracks) so that it can be used with pool.imap so that the progress bar works (it wont with starmap)
     car, tracks_raw, las_r, mu_corr, target, sim_type = car_tracks

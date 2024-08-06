@@ -7,8 +7,8 @@ from line_curvature_2D import linecurvature2D
 from math_channels import add_contact_patch_load, add_corrected_acc, add_corrected_shockpots, add_lltd_chans, add_suspension_forces, get_data
 from csaps import csaps
 from scipy.ndimage import uniform_filter1d
-from maths import clean_interp
-from constants import *
+from toolkit.common.maths import clean_interp
+from toolkit.common.constants import *
 
 class Track:
     def __init__(self, raw_track, x_track, y_track, z_track, sc, freq, spl_sm) -> None:
