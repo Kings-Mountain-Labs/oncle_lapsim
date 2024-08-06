@@ -1,128 +1,22 @@
 import numpy as np
-import cmath
-import math
-
-
-def inverse_clarke_transform_matrix(alpha, beta, zero):
-    """
-    Perform the inverse Clarke transform using matrix operations.
-
-    Args:
-    alpha (float): Alpha quantity from Clarke transform
-    beta (float): Beta quantity from Clarke transform
-    zero (float): Zero sequence component
-
-    Returns:
-    np.array: [a, b, c] quantities
-    """
-    T_inv_clarke = np.array(
-        [
-            [1, 0, 1 / np.sqrt(3)],
-            [-0.5, np.sqrt(3) / 2, 1 / np.sqrt(3)],
-            [-0.5, -np.sqrt(3) / 2, 1 / np.sqrt(3)],
-        ]
-    )
-
-    alpha_beta_zero = np.array([alpha, beta, zero])
-    abc = np.dot(T_inv_clarke, alpha_beta_zero)
-    return abc
-
-
-def inverse_park_transform_matrix(d, q, theta):
-    """
-    Perform the inverse Park transform using matrix operations.
-
-    Args:
-    d (float): d-axis quantity from Park transform
-    q (float): q-axis quantity from Park transform
-    theta (float): Rotor angle in radians
-
-    Returns:
-    np.array: [alpha, beta] quantities
-    """
-    T_inv_park = np.array(
-        [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
-    )
-
-    dq = np.array([d, q])
-    alpha_beta = np.dot(T_inv_park, dq)
-    return alpha_beta
-
-
-def calculate_total_real_power_symmetrical(V_a, V_b, V_c, I_a, I_b, I_c):
-    """
-    Calculate the total real power in an unbalanced sinusoidal three-phase system
-    using symmetrical components theory with positive sequence phasors.
-
-    Parameters:
-    V_a, V_b, V_c : complex
-        Phasor voltages of phases a, b, and c.
-    I_a, I_b, I_c : complex
-        Phasor currents of phases a, b, and c.
-
-    Returns:
-    float
-        Total real power.
-    """
-    # Define the phase shift operator a
-    a = cmath.exp(1j * 2 * cmath.pi / 3)
-
-    # Calculate the positive sequence components of voltages
-    V_0 = (V_a + V_b + V_c) / 3
-    V_1 = (V_a + a * V_b + a**2 * V_c) / 3
-    V_2 = (V_a + a**2 * V_b + a * V_c) / 3
-
-    # Calculate the positive sequence components of currents
-    I_0 = (I_a + I_b + I_c) / 3
-    I_1 = (I_a + a * I_b + a**2 * I_c) / 3
-    I_2 = (I_a + a**2 * I_b + a * I_c) / 3
-
-    # Calculate the magnitudes of V_1 and I_1
-    V_1_magnitude = abs(V_1)
-    I_1_magnitude = abs(I_1)
-
-    # Calculate the phase angles of V_1 and I_1
-    V_1_angle = cmath.phase(V_1)
-    I_1_angle = cmath.phase(I_1)
-
-    # Calculate the total real power
-    P_total = 3 * V_1_magnitude * I_1_magnitude * math.cos(V_1_angle - I_1_angle)
-    S = np.sqrt((V_a**2 + V_b**2 + V_c**2) * (I_a**2 + I_b**2 + I_c**2))
-    pf = P_total / S
-
-    return P_total, pf
-
-
-def calc_abc(t, d, q):
-    alpha_beta = inverse_park_transform_matrix(d, q, t)
-    return inverse_clarke_transform_matrix(alpha_beta[0], alpha_beta[1], 0)
-
+from .transforms import calculate_real_power, calc_abc
+from astropy import units as u
 
 class Motor:
-    def __init__(self, name):
-        self.name = name
-        self.max_rate = 6000  # rpm
-        self.max_torque = 231  # Nm
-        self.max_phase_current = 380  # A
-        self.I_dmax = 221  # A
-        self.I_qmax = 453  # A
-        self.Ld = 0.000076  # H
-        self.Ld_gain = 0.000000  # H/A
-        self.Lq = 0.000079  # H
-        self.Lq_gain = 0.000000  # H/A
-        self.Rs = 0.0071  # Ohm
-        self.poles = 10
-        self.Fl = 0.0355  # Wb
+    name: str = ""
+    max_rate: u.Quantity[u.PhysicalType("angular velocity")] = 6500 * u.rpm
+    max_torque: u.Quantity[u.PhysicalType("torque")] = 231 * u.N * u.m
+    max_phase_current: u.Quantity[u.PhysicalType("current")] = 340 * u.A
+    Ld: u.Quantity[u.PhysicalType("inductance")] = 76 * u.uH
+    Lq: u.Quantity[u.PhysicalType("inductance")] = 79 * u.uH
+    Rs: u.Quantity[u.PhysicalType("resistance")] = 0.0071 * u.ohm
+    poles: int = 10
+    Fl: u.Quantity[u.PhysicalType("magnetic flux")] = 0.0355 * u.Wb
+    rotor_inertia: u.Quantity[u.PhysicalType("moment of inertia")] = 0.0383 * u.kg * u.m**2
+    mass: u.Quantity[u.PhysicalType("mass")] = 12.4 * u.kg
 
     def get_torque(self, I_d, I_q):
-        Ld, Lq = self.get_inductance(I_d, I_q)
-        return 3 / 2 * self.poles * I_q * (self.Fl - I_d * (Lq - Ld))
-
-    def get_inductance(self, I_d, I_q):
-        return (
-            self.Ld + I_d * self.Ld_gain,
-            self.Lq + I_d * self.Lq_gain,
-        )  # get the change in inductance due to Id current
+        return 3 / 2 * self.poles * I_q * (self.Fl - I_d * (self.Lq - self.Ld))
 
     def get_qd_currents(self, w, torque_req, voltage, use_mtpa=False):
         w_e = w * self.poles
@@ -225,7 +119,7 @@ class Motor:
             * (self.Ld - self.Lq) ** 2
             * self.Lq**2
             * w_e**2,  # Coefficient of i_{q_fw}^4
-            0,  # Coefficient of i_{q_fw}^3 (since it doesn't appear in your equation)
+            0,  # Coefficient of i_{q_fw}^3 (since it doesn't appear in the equation)
             9 * self.poles**2 * self.Fl**2 * self.Lq**2 * w_e**2
             - 9
             * self.poles**2
@@ -317,5 +211,5 @@ class Motor:
         i_a, i_b, i_c = calc_abc(0, id, iq)
         v_d, v_q = self.get_voltages(w, id, iq)
         v_a, v_b, v_c = calc_abc(0, v_d, v_q)
-        power, _ = calculate_total_real_power_symmetrical(v_a, v_b, v_c, i_a, i_b, i_c)
+        power, _ = calculate_real_power(v_a, v_b, v_c, i_a, i_b, i_c)
         return power * 2
