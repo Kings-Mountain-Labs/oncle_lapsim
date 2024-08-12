@@ -20,7 +20,7 @@ def calc_vel(c_0, c_1, c_2, v_min = 0.1):
     return v_min, True
 
 @njit
-def solve_point(aymax, yawmax, longAcc, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp = 1000, vbb = 1000):
+def solve_point(aymax, yawmax, longAcc, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, vbp = 1000, vbb = 1000):
     point = longAcc # arbitrary point on LAS
 
     # Calculate the velocity limit based on the longitudinal acceleration limits
@@ -141,18 +141,18 @@ class Octahedral_LAS(LAS):
         super().__init__(*args, **kwargs)
         self.vel_bins = None
 
-    def find_vel_limit(self, vel, k, k_prime, u) -> tuple[np.float64, np.float64]:
+    def find_vel_limit(self, vel, k, k_prime, u):
         return find_vel_limit(vel, self.vels, self.aymax, self.yawmax, k, k_prime, u)
 
-    def solve_point(self, vv, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, forward, vbp = 1000, vbb = 1000) -> tuple[np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, bool]:
+    def solve_point(self, vv, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, forward, vbp = 1000, vbb = 1000):
         if forward:
             longAcc = interp_LAS_corner(vv, self.vels, self.longAcc_forward)
         else:
             longAcc = interp_LAS_corner(vv, self.vels, self.longAcc_reverse)
-        return solve_point(interp_LAS_corner(vv, self.vels, self.aymax), interp_LAS_corner(vv, self.vels, self.yawmax), longAcc, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp, vbb)
+        return solve_point(interp_LAS_corner(vv, self.vels, self.aymax), interp_LAS_corner(vv, self.vels, self.yawmax), longAcc, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, vbp, vbb)
 
     def generate_las(self, car: Car, vel_bins=None, mu=1.0, use_drag=True, quiet=True):
-        self.set_las = (mu, vel_bins)
+        self.set_las = {"mu": mu, "vel_bins": int(vel_bins)}
         ## Initialize some stuff
         car.max_velocity = np.power((car.power / (0.5 * 1.225 * car.cd * car.A)), 1/3)
         # print(f"Max velocity based on drag: {self.max_velocity} m/s")

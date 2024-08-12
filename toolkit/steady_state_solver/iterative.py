@@ -1,14 +1,14 @@
 import numpy as np
-from Functions.py_functions.car_configuration import Car
+from toolkit.cars.car_configuration import Car
 from .sss import Steady_State_Solver
-from Functions.py_functions.maths import to_vel_frame, clip
+from toolkit.common.maths import to_vel_frame, clip
 
 class Iterative_Solver(Steady_State_Solver):
     def __init__(self):
         super().__init__()
         self.set_solver = "Iterative"
 
-    def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = 0.0, use_drag = False, long_err = 0.01, lat_err = 0.001, zeros = True, use_torque_lim=False, use_break_lim=True) -> (float, float, float, float, int, bool):
+    def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = 0.0, use_drag = False, long_err = 0.01, lat_err = 0.001, zeros = True, use_torque_lim=False, use_break_lim=True):
         yaw_it, cn_it, ax_it = 0.0, 0.0, 0.0
         omega = ay_it / v_avg #Initial yaw rate [rad/s]
         kappax_fl, kappax_fr, kappax_rl, kappax_rr = 0, 0, 0, 0

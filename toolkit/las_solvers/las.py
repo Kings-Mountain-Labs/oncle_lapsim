@@ -4,22 +4,32 @@ from toolkit.steady_state_solver import Steady_State_Solver, Iterative_Solver
 from scipy.optimize import minimize
 from toolkit.common.constants import G
 from toolkit.common.maths import powspace
+from abc import ABC, abstractmethod
 
-class LAS:
-    def __init__(self, solver: Steady_State_Solver = Iterative_Solver()):
-        self.set_las = None
-        self.vels, self.aymax, self.yawmax, self.longAcc_forward, self.longAcc_reverse, self.aymax_sa, self.yawmax_sa = None, None, None, None, None, None, None
-        self.solver: Steady_State_Solver = solver
+class LAS(ABC):
+    solver: Steady_State_Solver
+    set_las: dict[str, float]
+    vels: np.ndarray
+    aymax: np.ndarray
+    yawmax: np.ndarray
+    longAcc_forward: np.ndarray
+    longAcc_reverse: np.ndarray
+    aymax_sa: np.ndarray
+    yawmax_sa: np.ndarray
 
-    def find_vel_limit(self, vel, k, k_prime, u) -> (np.float64, np.float64):
-        return np.inf, np.inf
+    @abstractmethod
+    def find_vel_limit(self, vel, k, k_prime, u) -> tuple[np.float64, np.float64]:
+        pass
 
-    def solve_point(self, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp = 1000, vbb = 1000) -> (np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, bool):
-        return v_j, 0.0, 0.0, 0.0, 0.0, 0.0, True
+    @abstractmethod
+    def solve_point(self, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp = 1000, vbb = 1000) -> tuple[np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, bool]:
+        pass
 
+    @abstractmethod
     def generate_las(self, car: Car, vel_bins: int=None, mu: float = 1.0):
         pass
 
+    @abstractmethod
     def plot_las(self, fig):
         pass
 

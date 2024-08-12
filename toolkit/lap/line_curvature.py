@@ -104,7 +104,7 @@ def  inverse3(Ta, Tb):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    from line_normals_2D import linenormals2d
+    from toolkit.lap.line_normals import linenormals2d
     a = np.arange(150)*0.1
     b = np.square(a)
     c = np.arange(150)*0.01

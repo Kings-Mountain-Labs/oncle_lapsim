@@ -92,7 +92,7 @@ class LS_Solver(Steady_State_Solver):
         super().__init__()
         self.set_solver = "Least_Squares"
 
-    def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = None, use_drag = False, long_err = 0.01, lat_err = 0.01, zeros = True, use_torque_lim=False, use_break_lim=True) -> (float, float, float, float, int, bool):
+    def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = None, use_drag = False, long_err = 0.01, lat_err = 0.01, zeros = True, use_torque_lim=False, use_break_lim=True):
         yaw_it, cn_it = 0.0, 0.0
         drag = 0
         if use_break_lim:

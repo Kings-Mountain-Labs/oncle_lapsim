@@ -4,10 +4,10 @@ from tire_model.tire_model_utils import H_R20_18X6_7
 from tire_model.tire_model_pacejka_2010 import tire_model_from_arr
 import plotly.graph_objs as go
 import time
-from constants import *
+from toolkit.common.constants import *
 from tire_model.fast_pacejka import get_rs_pacejka
 from scipy.optimize import minimize
-from Functions.py_functions.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
+from toolkit.common.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
 
 def loss_func_two(bd, car, ay_targ, vel, mu_corr, sr_lim):
     ay, yaw, ax, bruh = car.solve_for_yaw(ay_targ, vel, bd[0], bd[1], mu_corr, sr_lim=sr_lim)
@@ -91,12 +91,6 @@ class Car:
         self.front_pad_mu = 1.0 # friction coefficient
         self.rear_pad_mu = 1.0 # friction coefficient
         self.number_of_brake_pistons = 2
-
-        self.front_camber_gain = 0.5 # camber gain
-        self.rear_camber_gain = 0.5  # camber gain
-        self.front_toe_gain = 0.5    # toe gain
-        self.rear_toe_gain = 0.5     # toe gain
-        self.front_ackermann = 0.5   # ackermann
 
         self.brake_bias = 2.5 # 3.3.8.1. Driving and Braking Constraints in the Patton paper, 1 is even, 2 is 2x in the front
 

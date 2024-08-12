@@ -2,8 +2,8 @@ import scipy.io as sio
 from loading_util import make_path
 import numpy as np
 import pymap3d as pm
-from line_normals_2D import linenormals2d
-from line_curvature_2D import linecurvature2D
+from toolkit.lap.line_normals import linenormals2d
+from toolkit.lap.line_curvature import linecurvature2D
 from math_channels import add_contact_patch_load, add_corrected_acc, add_corrected_shockpots, add_lltd_chans, add_suspension_forces, get_data
 from csaps import csaps
 from scipy.ndimage import uniform_filter1d

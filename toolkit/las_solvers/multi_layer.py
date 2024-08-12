@@ -20,7 +20,7 @@ def calc_vel(c_0, c_1, c_2, v_min = 0.1):
     return v_min, True
 
 # @njit
-def solve_point(aymax, yawmax, longAcc, facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp = 1000, vbb = 1000):
+def solve_point(aymax, yawmax, longAcc, facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, vbp = 1000, vbb = 1000):
     corner_list = np.array([longAcc])
     #append the ay and yaw limits to the corner list
     corner_list = np.append(corner_list, aymax, axis=0)
@@ -180,14 +180,14 @@ class Multi_Layer_LAS(LAS):
         self.add_layers = None
         self.vel_bins = None
 
-    def find_vel_limit(self, vel, k, k_prime, u) -> (np.float64, np.float64):
+    def find_vel_limit(self, vel, k, k_prime, u):
         return find_vel_limit(vel, self.vels, self.aymax, self.yawmax, k, k_prime, u)
 
-    def solve_point(self, vv, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, forward, vbp = 1000, vbb = 1000) -> (np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, np.float64, bool):
+    def solve_point(self, vv, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, forward, vbp = 1000, vbb = 1000):
         if forward:
-            return solve_point(interp_LAS_surface(vv, self.vels, self.aymax_l[:, self.add_layers:]), interp_LAS_surface(vv, self.vels, self.yawmax_l[:, self.add_layers:]), interp_LAS_corner(vv, self.vels, self.longAcc_forward), self.facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp, vbb)
+            return solve_point(interp_LAS_surface(vv, self.vels, self.aymax_l[:, self.add_layers:]), interp_LAS_surface(vv, self.vels, self.yawmax_l[:, self.add_layers:]), interp_LAS_corner(vv, self.vels, self.longAcc_forward), self.facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, vbp, vbb)
         else:
-            return solve_point(interp_LAS_surface(vv, self.vels, self.aymax_l[:, :self.add_layers+1]), interp_LAS_surface(vv, self.vels, self.yawmax_l[:, :self.add_layers+1]), interp_LAS_corner(vv, self.vels, self.longAcc_reverse), self.facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, lat, long, yacc, vbp, vbb)
+            return solve_point(interp_LAS_surface(vv, self.vels, self.aymax_l[:, :self.add_layers+1]), interp_LAS_surface(vv, self.vels, self.yawmax_l[:, :self.add_layers+1]), interp_LAS_corner(vv, self.vels, self.longAcc_reverse), self.facets, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta_j, vbp, vbb)
 
 
     def generate_las(self, car: Car, vel_bins=None, mu=1.0, use_drag=True, quiet=True, add_layers=None):
