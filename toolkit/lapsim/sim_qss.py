@@ -1,5 +1,5 @@
 from toolkit.cars.car_configuration import Car
-from toolkit.lap.gps_importer import Track
+from toolkit.lap.track import Track
 import numpy as np
 import time
 from numba import njit

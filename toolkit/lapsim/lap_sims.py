@@ -1,6 +1,6 @@
 from sim_qss import sim_qss
 from toolkit.cars.car_configuration import Car, MMD_3D_Graphs
-from toolkit.lap.gps_importer import *
+from toolkit.lap.track import *
 from las_solvers.las import LAS
 import numpy as np
 from sim_qts import sim_qts

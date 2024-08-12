@@ -1,6 +1,6 @@
 from sim_qss import sim_qss
 from toolkit.cars.car_configuration import Car
-from toolkit.lap.gps_importer import *
+from toolkit.lap.track import *
 import numpy as np
 from sim_qts import sim_qts
 import plotly.graph_objects as go
