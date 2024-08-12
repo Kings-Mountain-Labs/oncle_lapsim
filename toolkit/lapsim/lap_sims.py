@@ -97,7 +97,7 @@ class RunSim():
                 self.las.generate_las(self.car, vel_bins=bins, mu=mu)
             self.lon, self.lat, self.omega_dot, self.dt, self.long, self.vel, self.vel_init, self.ddt, self.critc, self.iters, self.delta, self.beta, self.d_f, self.d_r = sim_qts(self.car, self.track, self.las, convergence_target)
         else:
-            raise ValueError(f"Sim type {sim_type} not recognised")
+            raise ValueError(f"Sim type {sim_type} not recognized")
         
         self.mu = mu
         self.v_average = v_average
@@ -240,7 +240,7 @@ class RunSim():
         fig.update_layout(template="plotly_dark", title_text="2D MMD")
         fig.show()
 
-    def plot_vs(self, distance=True, debug=False, yaw_rate=True, yaw_acc=True, seperate_acc=True, angles=True, seperate_angles=False, fz=True, curvature=False, vel_limit=True, delta_beta_est=False, weight_transfer=False, fz_est=False, yaw_rate_real=False, power_draw=False):
+    def plot_vs(self, distance=True, debug=False, yaw_rate=True, yaw_acc=True, separate_acc=True, angles=True, separate_angles=False, fz=True, curvature=False, vel_limit=True, delta_beta_est=False, weight_transfer=False, fz_est=False, yaw_rate_real=False, power_draw=False):
         if distance:
             a, b, c, d, e = self.track.interp_dist, self.track.u_crit, self.track.u, self.track.spa, self.track.ls_dist
             x_label = "Distance (m)"
@@ -252,7 +252,7 @@ class RunSim():
             self.generate_delta_beta()
 
         # Velocity + yaw rate + yaw acc + lateral acc + longitudinal acc + angles + separated angles + delta time + ddt + power_draw + curvature + fz
-        rows = 1 + int(yaw_rate) + int(yaw_acc) + 1 + int(seperate_acc) + int(angles) + int(angles) * int(seperate_angles) + 1 + 1 + (1 * int(power_draw)) + int(curvature) + int(fz)
+        rows = 1 + int(yaw_rate) + int(yaw_acc) + 1 + int(separate_acc) + int(angles) + int(angles) * int(separate_angles) + 1 + 1 + (1 * int(power_draw)) + int(curvature) + int(fz)
         row = 1
         fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.02)
 
@@ -297,7 +297,7 @@ class RunSim():
                 fig.add_trace(go.Scattergl(x=b, y=-self.beta_est, mode='lines', name="Beta Angle Est", legendgroup=f"group163", showlegend=True), row=row, col=1)
                 fig.add_trace(go.Scattergl(x=b, y=-self.delta_est, mode='lines', name="Delta Angle Est", legendgroup=f"group173", showlegend=True), row=row, col=1)
             fig.add_trace(go.Scattergl(x=a, y=self.track.steer, mode='lines', name="Steering Angle", legendgroup=f"group117", showlegend=True), row=row, col=1)
-            if seperate_angles:
+            if separate_angles:
                 fig.update_yaxes(title_text='Angle (deg)', range=[-35, 35], row=row, col=1)
                 row += 1
                 fig.update_yaxes(title_text='Angle (deg)', range=[-200, 200], row=row, col=1)
@@ -311,7 +311,7 @@ class RunSim():
         fig.add_trace(go.Scattergl(x=d, y=self.track.lat_acc, mode='lines', name="Lat Acc Real", legendgroup=f"group2", showlegend=False), row=row, col=1)
         if debug:
             fig.add_trace(go.Scattergl(x=b, y=(np.interp(b, d, self.track.lat_acc) - self.lat), mode='lines', name="Lat Acc Diff", legendgroup=f"group8", showlegend=False), row=row, col=1)
-        if seperate_acc:
+        if separate_acc:
             fig.update_yaxes(title_text='Acceleration Lat (m/s^2)', range=[-20, 20], row=row, col=1)
             row += 1
             fig.update_yaxes(title_text='Acceleration Long (m/s^2)', range=[-20, 20], row=row, col=1)
@@ -361,10 +361,10 @@ class RunSim():
             fig.add_trace(go.Scattergl(x=b, y=fzfr, mode='lines', name="FZFR", showlegend=True), row=row, col=1)
             fig.add_trace(go.Scattergl(x=b, y=fzrl, mode='lines', name="FZRL", showlegend=True), row=row, col=1)
             fig.add_trace(go.Scattergl(x=b, y=fzrr, mode='lines', name="FZRR", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=e, y=self.track.loadcell_fl, mode='lines', name="FZFL_Real", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=e, y=self.track.loadcell_fr, mode='lines', name="FZFR_Real", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=e, y=self.track.loadcell_rl, mode='lines', name="FZRL_Real", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=e, y=self.track.loadcell_rr, mode='lines', name="FZRR_Real", showlegend=True), row=row, col=1)
+            fig.add_trace(go.Scattergl(x=e, y=self.track.nl_fl, mode='lines', name="FZFL_Real", showlegend=True), row=row, col=1)
+            fig.add_trace(go.Scattergl(x=e, y=self.track.nl_fr, mode='lines', name="FZFR_Real", showlegend=True), row=row, col=1)
+            fig.add_trace(go.Scattergl(x=e, y=self.track.nl_rl, mode='lines', name="FZRL_Real", showlegend=True), row=row, col=1)
+            fig.add_trace(go.Scattergl(x=e, y=self.track.nl_rr, mode='lines', name="FZRR_Real", showlegend=True), row=row, col=1)
             if fz_est:
                 fzfl_r, fzfr_r, fzrl_r, fzrr_r, wt_pitch_r, wt_roll_r = self.car.find_contact_patch_loads(long_g=self.long_acc, lat_g=self.lat_acc, vel=np.interp(self.track.spa_t, self.track.raw_time, self.track.vel))
                 fig.add_trace(go.Scattergl(x=d, y=fzfl_r, mode='lines', name="FZFL_Accel", showlegend=True), row=row, col=1)

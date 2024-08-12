@@ -1,9 +1,32 @@
 {
     "cSpell.words": [
+        "arange",
+        "arctan",
+        "argmax",
+        "argmin",
+        "argwhere",
+        "csaps",
+        "cumsum",
+        "dunder",
+        "FZFL",
+        "FZFR",
+        "FZRL",
+        "FZRR",
+        "geomspace",
+        "hovertext",
         "interp",
+        "lims",
+        "loadmat",
+        "mapbox",
         "matlib",
+        "meshgrid",
         "ndarray",
-        "oncle"
+        "ndimage",
+        "oncle",
+        "pymap",
+        "Scattergl",
+        "xaxes",
+        "yaxes"
     ],
     "jupyter.notebookFileRoot": "${workspaceFolder}"
 }

@@ -10,6 +10,32 @@ from toolkit.common.maths import clean_interp
 from toolkit.common.constants import *
 from .channels import Channel
 from .gps import GPS, smooth_gps
+import plotly.graph_objects as go
+
+"""
+For the track there are a set of 'good' 'well known' channel names that are to be used for showing data in the graphs that are hard coded into the toolkit
+All of these channels use a dunder as a prefix to the name to prevent collisions with names used for logging
+
+The following channels are used in the toolkit:
+- __gps_vel - GPS Speed in m/s
+- __ws_fl - Wheel Speed in front left wheel in rpm
+- __ws_fr - Wheel Speed in front right wheel in rpm
+- __ws_rl - Wheel Speed in rear left wheel in rpm
+- __ws_rr - Wheel Speed in rear right wheel in rpm
+- __nl_fl - Contact patch normal force in front left
+- __nl_fr - Contact patch normal force in front right
+- __nl_rl - Contact patch normal force in rear left
+- __nl_rr - Contact patch normal force in rear right
+- __steering_angle - Steering Angle in degrees
+- __acc_x - Acceleration in x direction in m/s^2
+- __acc_y - Acceleration in y direction in m/s^2
+- __acc_z - Acceleration in z direction in m/s^2
+- __gyro_x - Gyro Rate in x direction in rad/s
+- __gyro_y - Gyro Rate in y direction in rad/s
+- __gyro_z - Gyro Rate in z direction in rad/s
+- __beta_angle - Beta Angle in degrees
+- __delta_angle - Delta Angle in degrees
+"""
 
 class Track:
     gps: GPS
@@ -34,14 +60,31 @@ class Track:
     @property
     def u(self):
         return self.smooth_gps.dist
+    
+    @property
+    def u_time(self):
+        return self.smooth_gps.time
 
     def make_k_prime(self):
         # Derivative of Curvature
         # Forward and Centered Difference Equations (Patton, 65)
         # note: Time Changes Depending on which Numerical Method is Utilized
         self.K_prime = np.zeros(len(self.k))
-        self.K_prime[1:-1] = (self.k[2:] - self.k[:-2]) / (2 * self.smooth_gps.dist[1])
+        self.K_prime[1:-1] = (self.k[2:] - self.k[:-2]) / (2 * self.u[1])
     
+    def get_channel(self, name, distance=False) -> tuple[np.ndarray, np.ndarray]:
+        if not name in self.channels.keys():
+            print(f"Channel {name} not found in track")
+            return np.array([0]), np.array([0])
+        if distance:
+            return np.interp(self.channels[name].time, self.smooth_gps.raw_time, self.u), self.channels[name].data
+        else:
+            return self.channels[name].time - self.gps.start_time, self.channels[name].data
+
+    def get_channel_go(self, name, distance=False) -> go.Scattergl:
+        time, data = self.get_channel(name, distance)
+        return go.Scattergl(x=time, y=data, mode='lines', name=name)
+
     def import_car_data(self):
         self.vel = self.raw_track["GPS_Speed"]["Value"][0, 0][0, :-4]
         if self.raw_track["GPS_Speed"]["Units"] != "m/s":
@@ -136,18 +179,6 @@ class Track:
         self.real_angle = self.real_angle_raw - uniform_filter1d(self.real_angle_raw - np.deg2rad(clean_interp(self.spa, self.u, self.angle)), 1000) # this should probably be a gaussian filter
         self.real_beta = clean_interp(self.u, self.spa, np.rad2deg(self.real_angle)) - self.angle
 
-def interp_track(x, y, z, sc, spl_sm = 0.85):
-    space = np.arange(len(x))
-    val = np.linspace(0, len(x), len(x) * sc)
-    out = csaps(space, np.array([x, y, z]), val, smooth=spl_sm)
-    return out[0, :], out[1, :], out[2, :] # remove some nastyness at the end
-
-def calc_distance(x_pts, y_pts):
-    delta_dist = np.zeros(x_pts.shape)
-    delta_dist[1:] = np.sqrt((x_pts[:-1] - x_pts[1:])**2 + (y_pts[:-1] - y_pts[1:])**2)
-    jump_ind = np.where(delta_dist > 0.0001)
-    dist = np.cumsum(delta_dist[jump_ind])
-    return dist, jump_ind, np.cumsum(delta_dist)
 
 def load_track_from_mat(file_path: str):
     return sio.loadmat(make_path(file_path))

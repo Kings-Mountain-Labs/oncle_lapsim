@@ -1,11 +1,10 @@
-from car_configuration import Car
-from gps_importer import *
+from toolkit.cars.car_configuration import Car
 import numpy as np
 import plotly.graph_objects as go
 from .steady_state_solver.sss import Steady_State_Solver
 from .steady_state_solver.iterative import Iterative_Solver
 import plotly.express as px
-from constants import *
+from toolkit.common.constants import *
 
 class MMD:
     def __init__(self, car: Car, solver: Steady_State_Solver = Iterative_Solver()):
