@@ -348,7 +348,7 @@ class RunSim():
         if curvature:
             row +=1
             fig.add_trace(go.Scattergl(x=c, y=self.track.k, mode='lines', name="Curvature (1/m)", showlegend=False), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=c, y=self.track.K_prime, mode='lines', name="dCurvature (1/(m^2))", showlegend=False), row=row, col=1)
+            fig.add_trace(go.Scattergl(x=c, y=self.track.k_prime, mode='lines', name="dCurvature (1/(m^2))", showlegend=False), row=row, col=1)
             fig.update_yaxes(title_text='k and dK', row=row, col=1)
 
         if fz:

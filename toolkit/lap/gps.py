@@ -52,6 +52,12 @@ class GPS:
             self.altitude_origin,
         )
 
+    def get_2d_track(self, enu=False):
+        if enu:
+            return np.array([self.x_track, self.y_track]).T
+        else:
+            return np.array([self.lat, self.lon]).T
+
 
 def gps_from_channels(lat: Channel, lon: Channel, alt: Channel = None, time: Channel = None, gps_offset: float = 0.05) -> GPS:
     gps = GPS()

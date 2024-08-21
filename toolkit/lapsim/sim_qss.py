@@ -55,7 +55,7 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     velocity_curve_rate = np.zeros([len(track.k)])
     vel_begin = time.time()
     for i in range(1, len(track.k)):
-        velocity_curve[i], velocity_curve_rate[i] = las.find_vel_limit(las.vels[lim_ind], (track.k[i] + track.k[i - 1]) / 2, (track.K_prime[i] + track.K_prime[i - 1]) / 2, (track.u[i] - track.u[i - 1]))
+        velocity_curve[i], velocity_curve_rate[i] = las.find_vel_limit(las.vels[lim_ind], (track.k[i] + track.k[i - 1]) / 2, (track.k_prime[i] + track.k_prime[i - 1]) / 2, (track.u[i] - track.u[i - 1]))
     velocity[1:] = velocity_curve[1:]#np.nanmin(np.array([velocity_curve_rate[1:], velocity_curve[1:]]), axis=0) # figure 104 Take the minimum of the velocity limit and the yaw rate minimum, this helps it converge faster velocity_curve[i] velocity_curve[i] # 
     if not silent:
         print(f"vel_crit_time: {(time.time()-vel_begin):.3f}")

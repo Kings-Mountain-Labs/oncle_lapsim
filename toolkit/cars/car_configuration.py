@@ -1,5 +1,4 @@
 import numpy as np
-import astropy.units as u
 from tire_model.tire_model_utils import H_R20_18X6_7
 from tire_model.tire_model_pacejka_2010 import tire_model_from_arr
 import plotly.graph_objs as go
@@ -45,49 +44,49 @@ def sr_variable_lim(v_a, v_b, sr, upper, lower):
 
 
 class Car:
-    def __init__(self, mass = 663 * u.lbs, front_axle_weight = 0.49) -> None:
+    def __init__(self, mass = 663 * LB_TO_KG, front_axle_weight = 0.49) -> None:
         # this needs to be redone so it is a sensible and easy to use constructor
         self.description = "This is for labeling in sweeps"
         self.debug = False
         self.mass = mass # mass of vehicle
-        self.wb = 60.25 * u.inch
+        self.wb = 60.25 * IN_TO_M
         self.front_axle_weight = front_axle_weight # weight distribution toward front axle
-        self.mass_unsprung = 74 * u.lbs # mass of outboard
-        self.front_track = 48 * u.inch
-        self.rear_track = 47 * u.inch
-        self.cg_height = 11.7 * u.inch
-        self.A = 1.0 * u.m**2
+        self.mass_unsprung = 74 * LB_TO_KG # mass of outboard
+        self.front_track = 48 * IN_TO_M
+        self.rear_track = 47 * IN_TO_M
+        self.cg_height = 11.7 * IN_TO_M
+        self.A = 1.0
         self.cd = 1.59 # frontal drag coefficient
         self.cl = 3.3 # frontal lift coefficient
         self.front_axle_downforce = .4 # CoP distribution toward front axle
-        self.izz = 78.5 * u.kg * u.m**2 # moment of inertia of vehicle
+        self.izz = 78.5 # moment of inertia of vehicle
         # Front and Rear toe angles are per side, negative is toe out confirmed
-        self.toe_front = -0.5 * u.deg
-        self.toe_rear = -0.5 * u.deg
+        self.toe_front = -0.5
+        self.toe_rear = -0.5
         # Camber is in adapted ISO so a positive number is negative camber
-        self.i_a_f = -1.25 * u.deg
-        self.i_a_r = -1.25 * u.deg
-        self.k_c = 1456 * u.ft * u.lbf / u.deg #Chassis stiffness
-        self.k_f = 325 * u.ft * u.lbf / u.deg #Front roll stiffness
-        self.k_r = 275 * u.ft * u.lbf / u.deg #Rear roll stiffness
-        self.z_f = .126 * u.inch #Front roll center height
-        self.z_r = 1.1 * u.inch #Rear roll center height
-        self.hu_f = 8 * u.inch #Unsprung mass CG height
+        self.i_a_f = -1.25
+        self.i_a_r = -1.25
+        self.k_c = 1456 * FTLB_TO_NM #Chassis stiffness
+        self.k_f = 325 * FTLB_TO_NM #Front roll stiffness
+        self.k_r = 275 * FTLB_TO_NM #Rear roll stiffness
+        self.z_f = .126 * IN_TO_M #Front roll center height
+        self.z_r = 1.1 * IN_TO_M #Rear roll center height
+        self.hu_f = 8 * IN_TO_M #Unsprung mass CG height
         self.hu_r = self.hu_f
 
-        self.power = 52000 * u.W
-        self.max_torque = 165 * u.N * u.m
+        self.power = 52000
+        self.max_torque = 165
         self.drive_ratio = 4.1 # cock and balls
 
-        self.pedal_force = 75 * u.lbf # force applied to pedal in N
+        self.pedal_force = 75 * LB_TO_KG * G # force applied to pedal in N
         self.pedal_ratio = 4.5 # pedal ratio
         self.bias_bar = 0.5 # bias bar ratio
-        self.front_master_cylinder_dia = 19.1 * u.mm
-        self.rear_master_cylinder_dia = 23.8 * u.mm
-        self.front_piston_dia = 31.75 * u.mm
-        self.rear_piston_dia = 31.75 * u.mm
-        self.front_rotor_er = 5.84 * 0.5 * u.inch # m effective radius
-        self.rear_rotor_er = 5.84 * 0.5 * u.inch # m
+        self.front_master_cylinder_dia = 19.1
+        self.rear_master_cylinder_dia = 23.8
+        self.front_piston_dia = 31.75
+        self.rear_piston_dia = 31.75
+        self.front_rotor_er = 5.84 * 0.5 * IN_TO_M # m effective radius
+        self.rear_rotor_er = 5.84 * 0.5 * IN_TO_M # m
         self.front_pad_mu = 1.0 # friction coefficient
         self.rear_pad_mu = 1.0 # friction coefficient
         self.number_of_brake_pistons = 2

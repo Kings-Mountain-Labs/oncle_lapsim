@@ -23,6 +23,15 @@ def load_channel(name:str, data):
     channel.freq = int(1/np.mean(d_t))
     return channel
 
+def null_channel(name: str, time_offset: float = 0) -> Channel:
+    channel = Channel()
+    channel.name = name
+    channel.short_name = name
+    channel.unit = "None"
+    channel.time = np.array([0]) + time_offset
+    channel.data = np.array([0])
+    return channel
+
 # This also assumes a mat file exported by i2Pro
 def parse_car_data_mat(data) -> dict[str, Channel]:
     channel_dict = {}

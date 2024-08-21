@@ -1,6 +1,6 @@
 import numpy as np
 
-def linecurvature2D(vertices):
+def linecurvature2d(vertices):
     """
     This function calculates the curvature of a 2D line. It first fits 
     polygons to the points. Then calculates the analytical curvature from
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     d = c**2
     line1 = np.array([a, b])
     line2 = np.array([c, d])
-    xyout = linecurvature2D(line1.T)
+    xyout = linecurvature2d(line1.T)
     # print(xyout)
-    xyout1 = linecurvature2D(line2.T)
+    xyout1 = linecurvature2d(line2.T)
     # print(xyout1)
     plt.plot(a, b)
     xyout_ln = linenormals2d(line1.T)
