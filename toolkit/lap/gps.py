@@ -6,6 +6,7 @@ from toolkit.common.maths import clean_interp
 
 class GPS:
     start_time: float  # this is the gps time at which the time series datum is
+    laptime_datum: float  # this is the time in sec that time begins at
     freq: int
     time: np.ndarray
     raw_time: np.ndarray
@@ -63,7 +64,8 @@ def gps_from_channels(lat: Channel, lon: Channel, alt: Channel = None, time: Cha
     gps = GPS()
     gps.lat = lat.data
     gps.lon = lon.data
-    gps.time = lat.time - lat.time[0]
+    gps.laptime_datum = lat.time[0]
+    gps.time = lat.time - gps.laptime_datum
     gps.raw_time = lat.time - gps_offset # this is the phase shift of the gps logging
     gps.freq = lat.freq
     if alt is None:
@@ -86,6 +88,7 @@ def smooth_gps(gps: GPS, sc: int, spl_sm: float = 0.85):
     new_gps = GPS()
     new_gps.freq = gps.freq
     new_gps.start_time = gps.start_time
+    new_gps.laptime_datum = gps.laptime_datum
     new_gps.lat_origin = gps.lat_origin
     new_gps.lon_origin = gps.lon_origin
     new_gps.altitude_origin = gps.altitude_origin

@@ -28,8 +28,8 @@ def null_channel(name: str, time_offset: float = 0) -> Channel:
     channel.name = name
     channel.short_name = name
     channel.unit = "None"
-    channel.time = np.array([0]) + time_offset
-    channel.data = np.array([0])
+    channel.time = np.array([0.0]) + time_offset
+    channel.data = np.array([0.0])
     return channel
 
 # This also assumes a mat file exported by i2Pro

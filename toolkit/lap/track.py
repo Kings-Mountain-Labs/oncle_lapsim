@@ -59,7 +59,7 @@ class Track:
         for key in WELL_KNOWN_KEYS:
             if key not in self.channels.keys():
                 print(f"Channel {key} not found in track, adding it a null channel")
-                self.channels[key] = null_channel(key, time_offset=self.gps.start_time)
+                self.channels[key] = null_channel(key, time_offset=self.gps.laptime_datum)
         self.vc = np.zeros(len(self.k))
         self.vc_r = np.zeros(len(self.k))
         # self.import_car_data()
@@ -87,7 +87,7 @@ class Track:
             return np.interp(self.channels[name].time, self.smooth_gps.raw_time, self.u), self.channels[name].data
         else:
             if datum:
-                return self.channels[name].time - self.gps.start_time, self.channels[name].data
+                return self.channels[name].time - self.gps.laptime_datum, self.channels[name].data
             else:
                 return self.channels[name].time, self.channels[name].data
 
