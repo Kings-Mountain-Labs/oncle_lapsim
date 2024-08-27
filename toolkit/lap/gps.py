@@ -65,7 +65,7 @@ def gps_from_channels(lat: Channel, lon: Channel, alt: Channel = None, time: Cha
     gps.lat = lat.data
     gps.lon = lon.data
     gps.laptime_datum = lat.time[0]
-    gps.time = lat.time - gps.laptime_datum
+    gps.time = lat.time - gps.laptime_datum - gps_offset # This may be needed to phase shift the other channels to match the gps data
     gps.raw_time = lat.time - gps_offset # this is the phase shift of the gps logging
     gps.freq = lat.freq
     if alt is None:
