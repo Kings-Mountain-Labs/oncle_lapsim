@@ -80,6 +80,9 @@ class Track:
         self.k_prime = np.zeros(len(self.k))
         self.k_prime[1:-1] = (self.k[2:] - self.k[:-2]) / (2 * self.u[1])
     
+    def get_ch_dist(self, name) -> np.ndarray:
+        return np.interp(self.channels[name].time, self.smooth_gps.raw_time, self.u)
+
     def get_channel(self, name, distance=False, datum=True) -> tuple[np.ndarray, np.ndarray]:
         if not name in self.channels.keys():
             print(f"Channel {name} not found in track")
@@ -107,12 +110,8 @@ class Track:
             return go.Scattergl(x=time, y=data, mode='lines', name=p_name, legendgroup=group, showlegend=legend)
 
     def import_car_data(self):
-        self.interp_dist = self.raw_dist[::self.sc]
         self.ddt_cumsum = self.time[::self.sc]
         
-        self.spa = clean_interp(self.spa_t, self.time, self.raw_dist)
-        self.ls_dist = clean_interp(self.ls_time, self.u_time, self.u)
-
         self.real_vel = np.zeros(self.u.shape)
         self.real_vel[1:] = self.u[1:] / np.diff(self.u_time)
         self.real_vel[0] = self.u[0] / (self.u_time[1] - self.u_time[0])
