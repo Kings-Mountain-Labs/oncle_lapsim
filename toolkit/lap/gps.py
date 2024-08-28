@@ -79,6 +79,7 @@ def gps_from_channels(lat: Channel, lon: Channel, alt: Channel = None, time: Cha
         gps.start_time = time.data[0]
     else:
         gps.gps_time = np.zeros(gps.lat.shape)
+        gps.start_time = 0.0
 
     gps.generate_enu()
     gps.generate_dist()

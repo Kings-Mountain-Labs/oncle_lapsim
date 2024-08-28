@@ -9,6 +9,19 @@ class Channel:
     data: np.ndarray = np.array([])
     freq: int = 0
 
+def copy_chan(chan: Channel, new_data: np.ndarray = None) -> Channel:
+    new_chan = Channel()
+    new_chan.name = chan.name
+    new_chan.short_name = chan.short_name
+    new_chan.unit = chan.unit
+    new_chan.time = chan.time
+    if new_data is None:
+        new_chan.data = chan.data.copy()
+    else:
+        new_chan.data = new_data
+    new_chan.freq = chan.freq
+    return new_chan
+
 def derivative_chan(chan: Channel, name: str, short_name: str = None, unit: str = "", smooth: int = None) -> Channel:
     new_chan = Channel()
     new_chan.name = name
@@ -25,7 +38,7 @@ def derivative_chan(chan: Channel, name: str, short_name: str = None, unit: str 
     return new_chan
 
 def deg2rad_chan(chan: Channel) -> Channel:
-    if chan.unit in ["deg", "degrees", "°/s", "°/s^2", "°"]:
+    if chan.unit in ["deg", "degrees", "deg/s", "degrees/s", "deg/s^2", "degrees/s^2", "°/s", "°/s^2", "°"]:
         if chan.unit in ["deg", "degrees", "°"]:
             chan.unit = "rad"
         elif chan.unit in ["°/s", "deg/s", "degrees/s"]:
@@ -80,3 +93,52 @@ def parse_car_data_mat(data) -> dict[str, Channel]:
         if channel[0] != "_":
             channel_dict[channel] = load_channel(channel, data[channel])
     return channel_dict
+
+def pitch_roll_yaw_transform(x_c: Channel, y_c: Channel, z_c: Channel, roll: float, pitch: float, yaw: float) -> tuple[Channel, Channel, Channel]:
+    """
+    Perform roll, pitch, and yaw transformation on the given x, y, and z axis arrays.
+
+    Parameters:
+    - x: numpy array representing the x-axis
+    - y: numpy array representing the y-axis
+    - z: numpy array representing the z-axis
+    - roll: angle in radians for roll (rotation around x-axis)
+    - pitch: angle in radians for pitch (rotation around y-axis)
+    - yaw: angle in radians for yaw (rotation around z-axis)
+
+    Returns:
+    - x_transformed: transformed x-axis numpy array
+    - y_transformed: transformed y-axis numpy array
+    - z_transformed: transformed z-axis numpy array
+    """
+    x = x_c.data
+    y = y_c.data
+    z = z_c.data
+    # Create rotation matrices
+    R_x = np.array([[1, 0, 0],
+                    [0, np.cos(roll), -np.sin(roll)],
+                    [0, np.sin(roll), np.cos(roll)]])
+
+    R_y = np.array([[np.cos(pitch), 0, np.sin(pitch)],
+                    [0, 1, 0],
+                    [-np.sin(pitch), 0, np.cos(pitch)]])
+
+    R_z = np.array([[np.cos(yaw), -np.sin(yaw), 0],
+                    [np.sin(yaw), np.cos(yaw), 0],
+                    [0, 0, 1]])
+
+    # Combined rotation matrix
+    R = R_z @ R_y @ R_x
+
+    # Stack the axes into a single matrix
+    original_axes = np.stack([x, y, z])
+
+    # Apply the rotation matrix to the axes
+    transformed_axes = R @ original_axes
+
+    # Unpack the transformed axes
+    x_transformed, y_transformed, z_transformed = transformed_axes
+    x_transformed_c = copy_chan(x_c, x_transformed)
+    y_transformed_c = copy_chan(y_c, y_transformed)
+    z_transformed_c = copy_chan(z_c, z_transformed)
+    return x_transformed_c, y_transformed_c, z_transformed_c
