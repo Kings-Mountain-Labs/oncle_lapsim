@@ -54,43 +54,11 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
     ay_error = abs(ay_v - ay_targ)
     return ay_v, cn_it, yaw_it, ax_v, long_error, ay_error
 
-# def backup_loss_func(x, car: Car, ax_targ, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
-#     ay_targ, lfx = x
-#     ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_targ, lfx, car, v_avg, ax_targ, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-#     return ay_error
 
 def backup_loss_func(x, car: Car, ax_targ, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
     ay_targ, lfx = x
     ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_targ, lfx, car, v_avg, ax_targ, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
     return [ay_error, long_error]
-
-# def backup_loss_func(x, car: Car, lfx, ax_targ, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
-#     ay_targ = x
-#     ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_targ, lfx, car, v_avg, ax_targ, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-#     return ay_error
-
-class LossWrapper:
-    def __init__(self):
-        self.current_params = None
-        self.threshold = 0.001
-        self.L1 = None
-        self.L2 = None
-
-    def compute_losses(self, params, car: Car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
-        if self.current_params is None or not np.array_equal(self.current_params, params):
-            ay_targ, lfx = params
-            ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_targ, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-            self.L1, self.L2 = long_error, ay_error
-            self.current_params = params
-
-    def combined_loss(self, params, *args):
-        self.compute_losses(params, *args)
-        return self.L2
-
-    def constraint(self, params, *args):
-        self.compute_losses(params, *args)
-        return (self.L1 - self.threshold) * -1 # constraint must be greater than 0, but we want the actual value to be less than zero
-
 
 class LS_Solver(Steady_State_Solver):
     def __init__(self):
@@ -121,7 +89,7 @@ class LS_Solver(Steady_State_Solver):
             ay_it = ay_z[np.argmin(ay_error)]
         ay_init = ay_it
         args = (car, long_g, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-        res = least_squares(backup_loss_func, [ay_it, lfx], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="trf", max_nfev=100, ftol=1e-8, loss="cauchy", verbose=0)
+        res = least_squares(backup_loss_func, [ay_it, lfx], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="trf", max_nfev=30, ftol=1e-5, loss="cauchy", verbose=0)
         ay_it, lfx = res.x
         bruh = res.nfev
         ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_it, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
