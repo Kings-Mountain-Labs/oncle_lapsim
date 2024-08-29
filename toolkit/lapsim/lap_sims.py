@@ -10,8 +10,9 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 from toolkit.common.constants import *
 from scipy.spatial import KDTree
+from typing import List
 
-def find_closest_kd(tree, points, ax, ay, yaw):
+def find_closest_kd(tree: KDTree, points: np.ndarray, ax: float, ay: float, yaw: float) -> tuple[float, float, float]:
     """
     Finds the closest beta and delta to the given ax, ay, yaw and vel
     :param LAS_points: List of LAS points
@@ -36,7 +37,7 @@ def find_closest_delta_beta(LAS_points, ax, ay, yaw, vel, vels):
     :param vel: Velocity
     :return: The closest beta and delta
     """
-    trees = []
+    trees: List[KDTree] = []
     points = []
     for i in range(len(vels)):
         (vel_ind,) = np.where(LAS_points[:, 5] == vels[i])

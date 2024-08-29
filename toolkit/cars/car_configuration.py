@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 import time
 from toolkit.common.constants import *
 from toolkit.tire_model.fast_pacejka import get_rs_pacejka
-from scipy.optimize import minimize
+from scipy.optimize import minimize, OptimizeResult
 from toolkit.common.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
 
 def loss_func_two(bd, car, ay_targ, vel, mu_corr, sr_lim):
@@ -541,7 +541,7 @@ class Car:
         del_max, del_min = delta_max, -delta_max
         # del_min = -np.deg2rad(5)
         # res = least_squares(loss_func, [beta_x, delta_x], args=(self, ay_targ, vel, mu_corr, sr_lim,), bounds=((-beta_max, del_min), (beta_max, del_max)), verbose=0)
-        res = minimize(loss_func_two, [beta_x, delta_x], args=(self, ay_targ, vel, mu_corr, sr_lim,), bounds=((-beta_max, beta_max), (del_min, del_max)), options=dict(disp=False), method="Nelder-Mead")
+        res: OptimizeResult = minimize(loss_func_two, [beta_x, delta_x], args=(self, ay_targ, vel, mu_corr, sr_lim,), bounds=((-beta_max, beta_max), (del_min, del_max)), options=dict(disp=False), method="Nelder-Mead")
         beta, delta = res.x
         ay, yaw, ax, bruh = self.solve_for_yaw(ay_targ, vel, beta, delta, mu_corr, sr_lim=sr_lim)
         return beta, delta, ay, yaw, ax, bruh

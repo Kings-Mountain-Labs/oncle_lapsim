@@ -1,6 +1,6 @@
-from car_configuration import Car
+from cars.car_configuration import Car
 import time
-from constants import *
+from common.constants import *
 from tire_model.fast_pacejka import *
 
 if __name__ == '__main__':
