@@ -37,6 +37,10 @@ class LAS(ABC):
     def plot_las(self, fig: go.Figure):
         pass
 
+    @abstractmethod
+    def get_xyzijk(self, vv:float = 15.0):
+        pass
+
     def find_limit(self, car: Car, v_avg, long_g, func, beta_lim = 7, delta_lim = 15, use_drag=True, mu = 1.0, b_guess = 0.0, d_guess = 0.0):
         """
         We find the corners of the MMD (peak lateral acceleration and peak yaw rate) using a bisection method
