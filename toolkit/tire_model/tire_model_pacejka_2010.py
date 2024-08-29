@@ -2,7 +2,7 @@ import numpy as np
 from .tire_model_utils import MODEL_DEFAULTS, VarInf, PostProInputs, Mode, FAndmoments, set_x, Result, RetValue, InputRanges, dump_tk
 from .tire_fitting_masks import LABELS, NAMES
 from typing import List
-from loading_util import make_path
+from toolkit.loading_util import make_path
 
 def safe_sign(arr):
     if type(arr) != np.ndarray: # Zero Fz correction

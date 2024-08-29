@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 
 class LAS(ABC):
     solver: Steady_State_Solver
-    set_las: dict[str, float]
+    set_las: dict[str, float] = None
     vels: np.ndarray
     aymax: np.ndarray
     yawmax: np.ndarray
@@ -16,6 +16,9 @@ class LAS(ABC):
     longAcc_reverse: np.ndarray
     aymax_sa: np.ndarray
     yawmax_sa: np.ndarray
+
+    def __init__(self, solver: Steady_State_Solver = Iterative_Solver()):
+        self.solver: Steady_State_Solver = solver
 
     @abstractmethod
     def find_vel_limit(self, vel, k, k_prime, u) -> tuple[np.float64, np.float64]:

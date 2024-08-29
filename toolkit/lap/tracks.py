@@ -21,8 +21,8 @@ def get_MIS_2017_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -45,8 +45,8 @@ def get_MIS_2017_End1_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -70,8 +70,8 @@ def get_MIS_2017_End2_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -94,8 +94,8 @@ def get_MIS_2017_AX_1_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -118,8 +118,8 @@ def get_MIS_2017_AX_2_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -142,8 +142,8 @@ def get_MIS_2017_AX_3_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -166,8 +166,8 @@ def get_MIS_2017_AX_4_track(sc) -> Track:
     data_dict["__acc_y"] = data_dict["G_Force_Vert"]
     data_dict["__acc_y"].data += -1
     data_dict["__acc_z"] = data_dict["G_Force_Long"]
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -188,8 +188,8 @@ def get_Crows_2023(sc) -> Track: # Lap 2 of milos 2023-10-12 where it cut out
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(data_dict["G_Force_Long"], data_dict["G_Force_Lat"], data_dict["G_Force_Vert"], 0.0, np.deg2rad(-45), 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 100)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 100)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -209,7 +209,7 @@ def get_Crows_2022(sc) -> Track:
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(data_dict["IMU_Acceleration_X"], data_dict["IMU_Acceleration_Y"], data_dict["IMU_Acceleration_Z"], 0.0, 0.0, 0.0)
     data_dict["__acc_z"].data += -1
     data_dict["__gyro_x"], data_dict["__gyro_y"], data_dict["__gyro_z"] = pitch_roll_yaw_transform(deg2rad_chan(data_dict["IMU_Angular_Rate_X"]), deg2rad_chan(data_dict["IMU_Angular_Rate_Y"]), deg2rad_chan(data_dict["IMU_Angular_Rate_Z"]), 0.0, 0.0, 0.0)
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 100)
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 100)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -225,8 +225,8 @@ def get_MIS_2019_track(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(unit_conversion(data_dict["G_Force_Long"], 'G', 1), unit_conversion(data_dict["G_Force_Lat"], 'G', 1), unit_conversion(data_dict["G_Force_Vert"], 'G', 1), np.deg2rad(3), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Gyro_Yaw_Velocity___Hi_Res"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Gyro_Yaw_Velocity___Hi_Res"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -243,8 +243,8 @@ def get_MIS_2018_track(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(unit_conversion(data_dict["G_Force_Long"], 'G', 1), unit_conversion(data_dict["G_Force_Lat"], 'G', 1), unit_conversion(data_dict["G_Force_Vert"], 'G', 1), np.deg2rad(3), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Gyro_Yaw_Velocity___Hi_Res"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Gyro_Yaw_Velocity___Hi_Res"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -261,8 +261,8 @@ def get_MIS_2021_track(sc) -> Track:
     data_dict["__steering_angle"].data += -4.24
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(unit_conversion(data_dict["G_Force_Long"], 'G', 1), unit_conversion(data_dict["G_Force_Lat"], 'G', 1), unit_conversion(data_dict["G_Force_Vert"], 'G', 1), np.deg2rad(3), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -283,8 +283,8 @@ def get_Lincoln_2017_AX_track(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(data_dict["G_Force_Long"], data_dict["G_Force_Lat"], data_dict["G_Force_Vert"], np.deg2rad(-5), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
 
 def get_Lincoln_2017_AX_track_mixed(sc) -> Track:
@@ -304,8 +304,8 @@ def get_Lincoln_2017_AX_track_mixed(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(data_dict["G_Force_Long"], data_dict["G_Force_Lat"], data_dict["G_Force_Vert"], np.deg2rad(-5), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -321,8 +321,8 @@ def get_MIS_2021_track_mixed(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(unit_conversion(data_dict["G_Force_Long"], 'G', 1), unit_conversion(data_dict["G_Force_Lat"], 'G', 1), unit_conversion(data_dict["G_Force_Vert"], 'G', 1), np.deg2rad(3), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track
 
@@ -338,7 +338,7 @@ def get_PNR_2022_11_6_Patton(sc) -> Track:
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Angle"])
     data_dict["__acc_x"], data_dict["__acc_y"], data_dict["__acc_z"] = pitch_roll_yaw_transform(unit_conversion(data_dict["G_Force_Long"], 'G', 1/9.81), unit_conversion(data_dict["G_Force_Lat"], 'G', 1/9.81), unit_conversion(data_dict["G_Force_Vert"], 'G', 1/9.81), np.deg2rad(3), 0.0, 0.0)
     data_dict["__acc_z"].data += -1
-    data_dict["__gyro_x"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
-    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_x"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
+    data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
+    data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
     track = Track(track_gps, data_dict, sc, 0.95)
     return track

@@ -4,7 +4,6 @@ import numpy as np
 import pymap3d as pm
 from toolkit.lap.line_normals import linenormals2d
 from toolkit.lap.line_curvature import linecurvature2d
-from csaps import csaps
 from scipy.ndimage import uniform_filter1d
 from toolkit.common.maths import clean_interp
 from toolkit.common.constants import *
@@ -72,6 +71,13 @@ class Track:
     @property
     def u_time(self):
         return self.smooth_gps.time
+    
+    @property
+    def vel(self):
+        if '__gps_vel' in self.channels.keys():
+            return self.channels['__gps_vel'].data
+        else:
+            return np.zeros(1)
 
     def make_k_prime(self):
         # Derivative of Curvature
@@ -125,20 +131,4 @@ class Track:
 
 def load_track_from_mat(file_path: str):
     return sio.loadmat(make_path(file_path))
-
-def load_track_from_raw(raw_track, sc, freq, spl_sm = 0.85):
-    # check to see if GPS Altitude was recorded, if not make it and fill it with zeros
-    if "GPS_Altitude" not in raw_track.keys():
-        raw_track["GPS_Altitude"] = {"Time": raw_track["GPS_Latitude"]["Time"].copy(), "Value": raw_track["GPS_Latitude"]["Time"].copy()}
-        raw_track["GPS_Altitude"]["Value"][0, 0][0, :] = np.zeros(raw_track["GPS_Altitude"]["Time"][0, 0][0, :].shape)
-    lat, lon, height = raw_track["GPS_Latitude"]["Value"][0, 0][0], raw_track["GPS_Longitude"]["Value"][0, 0][0], raw_track["GPS_Altitude"]["Value"][0, 0][0]
-    return load_track_lat_lon(lat, lon, height, raw_track, sc, freq, spl_sm)
-
-def load_track_lat_lon(lat, lon, height, raw_track, sc, freq, spl_sm):
-    lat_origin, lon_origin, height_origin = np.mean(lat), np.mean(lon), np.mean(height)
-    [x_track, y_track, z_track] = pm.geodetic2enu(lat, lon, height, lat_origin, lon_origin, height_origin)
-    return Track(raw_track, x_track, y_track, z_track, sc, freq, spl_sm)
-
-
-
     

@@ -1,5 +1,5 @@
-from car_configuration import Car
-from ..common.constants import *
+from toolkit.cars.car_configuration import Car
+from toolkit.common.constants import *
 
 def sr_9():
     # https://docs.google.com/presentation/d/1IPxDEFjDicdDgofIkFA93hF2H0lZS8ht/edit#slide=id.p5

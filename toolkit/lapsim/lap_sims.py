@@ -1,16 +1,15 @@
-from sim_qss import sim_qss
+from toolkit.lapsim.sim_qss import sim_qss
+from toolkit.lapsim.sim_qts import sim_qts
 from toolkit.cars.car_configuration import Car, MMD_3D_Graphs
 from toolkit.lap.track import *
-from las_solvers.las import LAS
+from toolkit.las_solvers.las import LAS
 import numpy as np
-from sim_qts import sim_qts
 import plotly.graph_objects as go
 import time
 from plotly.subplots import make_subplots
 import plotly.express as px
 from toolkit.common.constants import *
 from scipy.spatial import KDTree
-from toolkit.las_solvers.las import LAS
 
 def find_closest_kd(tree, points, ax, ay, yaw):
     """
@@ -110,9 +109,9 @@ class RunSim():
         self.tt = np.abs(np.cumsum(self.dt))
         self.calc_vel = np.cumsum(self.ddt * self.long)
         self.omega = self.vel * np.interp(self.track.u_crit, self.track.u, self.track.k)
-        self.diff_time = np.cumsum(self.ddt) - np.interp(self.track.u_crit, self.track.interp_dist, self.track.ddt_cumsum)
+        self.diff_time = np.cumsum(self.ddt) - np.interp(self.track.u_crit, self.track.smooth_gps.dist, self.track.smooth_gps.time)
         self.dt_dx = np.zeros(self.track.u_crit.shape[0])
-        self.dt_dx[1:] = self.ddt[1:] - np.diff(np.interp(self.track.u_crit, self.track.raw_dist, self.track.time))
+        self.dt_dx[1:] = self.ddt[1:] - np.diff(np.interp(self.track.u_crit, self.track.smooth_gps.dist, self.track.smooth_gps.time))
         self.tt_t = np.interp(self.track.u, self.track.u_crit, self.tt)
         self.generate_power_curve()
 
@@ -242,10 +241,10 @@ class RunSim():
 
     def plot_vs(self, distance=True, debug=False, yaw_rate=True, yaw_acc=True, separate_acc=True, angles=True, separate_angles=False, fz=True, curvature=False, vel_limit=True, delta_beta_est=False, weight_transfer=False, fz_est=False, yaw_rate_real=False, power_draw=False):
         if distance:
-            a, b, c, d, e = self.track.interp_dist, self.track.u_crit, self.track.u, self.track.spa, self.track.ls_dist
+            b, c = self.track.u_crit, self.track.u
             x_label = "Distance (m)"
         else:
-            a, b, c, d, e = self.track.ddt_cumsum, self.tt, self.tt_t, self.track.spa_t, self.track.ls_time
+            b, c = self.tt, self.tt_t
             x_label = "Time (s)"
 
         if delta_beta_est:
@@ -257,7 +256,7 @@ class RunSim():
         fig = make_subplots(rows=rows, shared_xaxes=True, vertical_spacing=0.02)
 
         fig.add_trace(go.Scattergl(x=b, y=self.vel, mode='lines', name="Sim Velocity", legendgroup=f"group1", showlegend=True), row=row, col=1)
-        fig.add_trace(self.track.get_channel_go("__gps_vel", distance, group=f"group2", showlegend=True), row=row, col=1)
+        fig.add_trace(self.track.get_channel_go("__gps_vel", distance, group=f"group2", legend=True), row=row, col=1)
         if debug:
             fig.add_trace(go.Scattergl(x=b, y=self.calc_vel, mode='lines', name="Calc Velocity", legendgroup=f"group3", showlegend=True), row=row, col=1)
         fig.add_trace(go.Scattergl(x=b, y=self.vel_init, mode='lines', name="Vel Limit", legendgroup=f"group4", showlegend=True), row=row, col=1)
@@ -272,13 +271,13 @@ class RunSim():
         if yaw_acc:
             row += 1
             fig.add_trace(go.Scattergl(x=b, y=self.omega_dot, mode='lines', name="Yaw Acc Sim", legendgroup=f"group1", showlegend=False), row=row, col=1)
-            fig.add_trace(self.track.get_channel_go("__yacc", distance, group=f"group2", showlegend=False), row=row, col=1)
+            fig.add_trace(self.track.get_channel_go("__yacc", distance, group=f"group2", legend=False), row=row, col=1)
             fig.update_yaxes(title_text='Yaw Acc (rad/sec^2)', range=[-10, 10], row=row, col=1)
 
         if yaw_rate:
             row += 1
             fig.add_trace(go.Scattergl(x=b, y=self.omega, mode='lines', name="Yaw Rate Sim", legendgroup=f"group1", showlegend=False), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=d, y=self.track.y_r, mode='lines', name="Yaw Rate Real", legendgroup=f"group2", showlegend=False), row=row, col=1)
+            fig.add_trace(self.track.get_channel_go("__gyro_z", distance, group=f"group2", legend=False), row=row, col=1)
             if yaw_rate_real:
                 fig.add_trace(go.Scattergl(x=c, y=self.track.y_r_k, mode='lines', name="Yaw Rate Real Curvature", legendgroup=f"group111", showlegend=True), row=row, col=1)
                 fig.add_trace(go.Scattergl(x=d, y=self.track.y_r_b, mode='lines', name="Yaw Rate Real Beta Contribution", legendgroup=f"group112", showlegend=True), row=row, col=1)
@@ -294,7 +293,7 @@ class RunSim():
             if delta_beta_est:
                 fig.add_trace(go.Scattergl(x=b, y=-self.beta_est, mode='lines', name="Beta Angle Est", legendgroup=f"group163", showlegend=True), row=row, col=1)
                 fig.add_trace(go.Scattergl(x=b, y=-self.delta_est, mode='lines', name="Delta Angle Est", legendgroup=f"group173", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=a, y=self.track.steer, mode='lines', name="Steering Angle", legendgroup=f"group117", showlegend=True), row=row, col=1)
+            fig.add_trace(self.track.get_channel_go("__steering_angle", distance, group=f"group117", legend=True), row=row, col=1)
             if separate_angles:
                 fig.update_yaxes(title_text='Angle (deg)', range=[-35, 35], row=row, col=1)
                 row += 1
@@ -302,11 +301,11 @@ class RunSim():
             else:
                 fig.update_yaxes(title_text='Angle (deg)', range=[-200, 200], row=row, col=1)
             fig.add_trace(go.Scattergl(x=c, y=self.track.angle, mode='lines', name="Track Angle", legendgroup=f"group153", showlegend=True), row=row, col=1)
-            fig.add_trace(go.Scattergl(x=d, y=np.rad2deg(self.track.real_angle), mode='lines', name="Real Angle", legendgroup=f"group115", showlegend=True), row=row, col=1)
+            # fig.add_trace(go.Scattergl(x=d, y=np.rad2deg(self.track.real_angle), mode='lines', name="Real Angle", legendgroup=f"group115", showlegend=True), row=row, col=1)
 
         row += 1
         fig.add_trace(go.Scattergl(x=b, y=self.lat, mode='lines', name="Lat Acc Sim", legendgroup=f"group1", showlegend=False), row=row, col=1)
-        fig.add_trace(self.track.get_channel_go("__acc_y", distance, group=f"group2", showlegend=False), row=row, col=1)
+        fig.add_trace(self.track.get_channel_go("__acc_y", distance, group=f"group2", legend=False), row=row, col=1)
         if debug:
             fig.add_trace(go.Scattergl(x=b, y=(np.interp(b, d, self.track.lat_acc) - self.lat), mode='lines', name="Lat Acc Diff", legendgroup=f"group8", showlegend=False), row=row, col=1)
         if separate_acc:
@@ -319,7 +318,7 @@ class RunSim():
         fig.add_trace(go.Scattergl(x=b, y=self.lon, mode='lines', name="Long Acc Sim", legendgroup=f"group1", showlegend=False), row=row, col=1)
         if debug:
             fig.add_trace(go.Scattergl(x=b, y=self.long, mode='lines', name="Long Acc Sim Max Init", legendgroup=f"group1", showlegend=False), row=row, col=1)
-        fig.add_trace(self.track.get_channel_go("__acc_x", distance, group=f"group2", showlegend=False), row=row, col=1)
+        fig.add_trace(self.track.get_channel_go("__acc_x", distance, group=f"group2", legend=False), row=row, col=1)
         if debug:
             fig.add_trace(go.Scattergl(x=b, y=(np.interp(b, d, self.track.long_acc) - self.lon), mode='lines', name="Long Acc Diff", legendgroup=f"group8", showlegend=False), row=row, col=1)
 

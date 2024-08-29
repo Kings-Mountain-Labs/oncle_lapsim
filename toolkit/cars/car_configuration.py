@@ -1,10 +1,10 @@
 import numpy as np
-from tire_model.tire_model_utils import H_R20_18X6_7
-from tire_model.tire_model_pacejka_2010 import tire_model_from_arr
+from toolkit.tire_model.tire_model_utils import H_R20_18X6_7
+from toolkit.tire_model.tire_model_pacejka_2010 import tire_model_from_arr
 import plotly.graph_objs as go
 import time
 from toolkit.common.constants import *
-from tire_model.fast_pacejka import get_rs_pacejka
+from toolkit.tire_model.fast_pacejka import get_rs_pacejka
 from scipy.optimize import minimize
 from toolkit.common.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
 
