@@ -80,26 +80,11 @@ class LS_Solver(Steady_State_Solver):
         if use_drag:
             drag = 0.5 * 1.225 * v_avg**2 * car.cd * car.A
 
-        lfx = car.mass * long_g + drag
-        lfx = min(max(lfx, 2*(max_f + max_r) - drag), max_tractive_force)
-        if ay_it is None or True:
-            # do a search to find the best start point
-            ay_z = np.linspace(-20, 20, 100)
-            _, _, _, _, _, ay_error = car_state_func(ay_z, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-            ay_it = ay_z[np.argmin(ay_error)]
-        ay_init = ay_it
         args = (car, long_g, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-        res = least_squares(backup_loss_func, [ay_it, lfx], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="dogbox", max_nfev=15, ftol=1e-8, loss="linear", verbose=0)
+        res = least_squares(backup_loss_func, [0.0, 0.0], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="trf", max_nfev=20, ftol=1e-3, loss="linear", verbose=0)
         ay_it, lfx = res.x
         bruh = res.nfev
         ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_it, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-
-        # if the initial guess is out of bounds we should print a warning
-        # print(f"Good Val {bruh}\nay_it: {ay_it:.6f}\tay_it: {ay_v:.6f}\tay_error: {ay_error:.6f}\tbeta_x: {np.rad2deg(beta_x):.2f}\tdelta_x: {np.rad2deg(delta_x):.2f}\tlong_g: {long_g:.6f}\tlong_error: {long_error:.6f}")
-        # if ay_error >= lat_err:
-        #     print(f"Warning: initial guess for ay_it is out of bounds for constraint {bruh}\nay_it: {ay_it:.6f}\tay_init: {ay_init:.6f}\tay_it: {ay_v:.6f}\tay_error: {ay_error:.6f}\tbeta_x: {np.rad2deg(beta_x):.2f}\tdelta_x: {np.rad2deg(delta_x):.2f}\tlong_g: {long_g:.6f}\tlong_error: {long_error:.6f}")
-        # if long_error >= lat_err:
-        #     print(f"Ax error is big")
 
         if (long_error > long_err or ay_error > lat_err): # ay_error > lat_err:#
             if zeros:
