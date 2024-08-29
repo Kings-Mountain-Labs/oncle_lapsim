@@ -89,7 +89,7 @@ class LS_Solver(Steady_State_Solver):
             ay_it = ay_z[np.argmin(ay_error)]
         ay_init = ay_it
         args = (car, long_g, v_avg, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-        res = least_squares(backup_loss_func, [ay_it, lfx], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="trf", max_nfev=30, ftol=1e-5, loss="cauchy", verbose=0)
+        res = least_squares(backup_loss_func, [ay_it, lfx], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="dogbox", max_nfev=15, ftol=1e-8, loss="linear", verbose=0)
         ay_it, lfx = res.x
         bruh = res.nfev
         ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_it, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
