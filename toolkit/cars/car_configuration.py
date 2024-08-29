@@ -74,7 +74,7 @@ class Car:
         self.hu_f = 8 * IN_TO_M #Unsprung mass CG height
         self.hu_r = self.hu_f
 
-        self.power = 52000
+        self.power = 80000
         self.max_torque = 165
         self.drive_ratio = 4.1 # cock and balls
 

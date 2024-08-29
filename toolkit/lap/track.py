@@ -3,15 +3,15 @@ from toolkit.loading_util import make_path
 import numpy as np
 import pymap3d as pm
 from toolkit.lap.line_normals import linenormals2d
-from toolkit.lap.line_curvature import linecurvature2d
 from scipy.ndimage import uniform_filter1d
-from toolkit.common.maths import clean_interp
+from toolkit.common.maths import clean_interp, calculate_curvature
 from toolkit.common.constants import *
 from .channels import Channel, null_channel
-from .gps import GPS, smooth_gps
+from .gps import GPS, smooth_gps, derive_chan_gps
 import plotly.graph_objects as go
+from scipy.signal import butter, filtfilt
 
-WELL_KNOWN_KEYS = ["__gps_vel", "__ws_fl", "__ws_fr", "__ws_rl", "__ws_rr", "__nl_fl", "__nl_fr", "__nl_rl", "__nl_rr", "__steering_angle", "__acc_x", "__acc_y", "__acc_z", "__gyro_x", "__gyro_y", "__gyro_z", "__beta_angle", "__delta_angle", "__yacc"]
+WELL_KNOWN_KEYS = ["__gps_vel", "__ws_fl", "__ws_fr", "__ws_rl", "__ws_rr", "__nl_fl", "__nl_fr", "__nl_rl", "__nl_rr", "__steering_angle", "__acc_x", "__acc_y", "__acc_z", "__gyro_x", "__gyro_y", "__gyro_z", "__beta_angle", "__delta_angle", "__yacc", "__k_prime", "__k", "__track_angle"]
 
 """
 For the track there are a set of 'good' 'well known' channel names that are to be used for showing data in the graphs that are hard coded into the toolkit
@@ -48,12 +48,21 @@ class Track:
         self.channels = channels
         self.smooth_gps = smooth_gps(self.gps, sc, spl_sm)
         track = np.array([self.smooth_gps.x_track, self.smooth_gps.y_track])
-        self.k = linecurvature2d(track.T) * -1
+        self.k = calculate_curvature(track) * -1
+        butter_order = 2
+        # the cutoff frequency should be approximately the distance the car travels between 3 cones in a tight slalom in units of 1/m
+        # My best guess is that it in the range of 5-10m 
+        dd = self.smooth_gps.dist[2] - self.smooth_gps.dist[0]
+        butter_b, butter_a = butter(butter_order, 1/1.5, 'low', analog=False, fs=1/(dd/2))
+        self.k = filtfilt(butter_b, butter_a, self.k)
         self.k[0] = 0
         self.track_normals = linenormals2d(track.T)
         self.angle = np.rad2deg(np.unwrap(np.arctan2(self.track_normals[:, 1], self.track_normals[:, 0]) - np.average(np.arctan2(self.track_normals[0:10, 1], self.track_normals[0:10, 0])))) * -1
         self.u_crit = self.smooth_gps.dist
         self.make_k_prime()
+        self.channels["__k_prime"] = derive_chan_gps(self.smooth_gps, self.k_prime, "__k_prime")
+        self.channels["__k"] = derive_chan_gps(self.smooth_gps, self.k, "__k")
+        self.channels["__track_angle"] = derive_chan_gps(self.smooth_gps, self.angle, "__track_angle")
         self.sc = int(sc / gps.freq)
         # If they havent added one of the important channels, add it
         for key in WELL_KNOWN_KEYS:

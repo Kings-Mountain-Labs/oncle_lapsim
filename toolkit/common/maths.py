@@ -114,3 +114,31 @@ def vel_at_tire(v, omega, beta, x, y):
 UP = np.deg2rad(15)
 def clip(x, up=UP):
     return min(max(x, -UP), UP)
+
+def calculate_curvature(points):
+    """
+    Calculate the curvature of a line represented by a [2,n] numpy array of points.
+
+    Parameters:
+    points (numpy.ndarray): A [2, n] array where the first row contains the x-coordinates
+                            and the second row contains the y-coordinates of the points.
+
+    Returns:
+    numpy.ndarray: An array of curvature values at each point.
+    """
+
+    # Ensure the input is a numpy array
+    points = np.asarray(points)
+    
+    # First derivatives
+    dx_dt = np.gradient(points[0])
+    dy_dt = np.gradient(points[1])
+
+    # Second derivatives
+    d2x_dt2 = np.gradient(dx_dt)
+    d2y_dt2 = np.gradient(dy_dt)
+
+    # Curvature formula
+    curvature = (dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**1.5
+
+    return curvature

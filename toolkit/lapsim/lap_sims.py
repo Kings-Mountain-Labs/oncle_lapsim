@@ -162,18 +162,18 @@ class RunSim():
         color2 = px.colors.qualitative.Light24[1]
         color3 = px.colors.qualitative.Light24[2]
         fig.add_trace(go.Scattergl(x=self.lat, y=self.lon, mode='lines', name="Sim", marker=dict(color=color1), legendgroup=f"group1", showlegend=False), row=1, col=1)
-        fig.add_trace(go.Scattergl(x=self.track.lat_acc, y=self.track.long_acc, mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=False), row=1, col=1)
+        fig.add_trace(go.Scattergl(x=self.track.get_ch("__acc_y"), y=self.track.get_ch("__acc_x"), mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=False), row=1, col=1)
         fig.update_xaxes(title_text='Lat Acc (m/s^2)', row=1, col=1)
         fig.update_yaxes(title_text='Long Acc (m/s^2)', row=1, col=1)
 
         fig.add_trace(go.Scattergl(x=self.lon, y=self.omega_dot, mode='lines', name="Sim", marker=dict(color=color1), legendgroup=f"group1", showlegend=False), row=1, col=2)
-        fig.add_trace(go.Scattergl(x=self.track.long_acc, y=self.track.get_ch("__yacc"), mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=False), row=1, col=2)
+        fig.add_trace(go.Scattergl(x=self.track.get_ch("__acc_x"), y=self.track.get_ch("__yacc"), mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=False), row=1, col=2)
         fig.update_xaxes(title_text='Long Acc (m/s^2)', row=1, col=2)
         fig.update_yaxes(title_text='Yaw Acc (rad/sec^2)', row=1, col=2)
 
         ay_it2, yaw_it2, _, delta_2, beta_2 = self.car.MMD(self.v_average, mu_corr=self.mu)
         fig.add_trace(go.Scattergl(x=self.lat, y=self.omega_dot, mode='lines', name="Sim", marker=dict(color=color1), legendgroup=f"group1", showlegend=True), row=2, col=1)
-        fig.add_trace(go.Scattergl(x=self.track.lat_acc, y=self.track.get_ch("__yacc"), mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=True), row=2, col=1)
+        fig.add_trace(go.Scattergl(x=self.track.get_ch("__acc_y"), y=self.track.get_ch("__yacc"), mode='lines', name="Real_Smoothed", marker=dict(color=color3), legendgroup=f"group3", showlegend=True), row=2, col=1)
         fig.update_xaxes(title_text='Lat Acc (m/s^2)', row=2, col=1)
         fig.update_yaxes(title_text='Yaw Acc (rad/sec^2)', row=2, col=1)
         for i, betax in enumerate(beta_2):
@@ -199,10 +199,10 @@ class RunSim():
                 ),
                 row=2, col=1)
         
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.u_crit, self.track.u, self.track.x_ss), y=np.interp(self.track.u_crit, self.track.u, self.track.y_ss), mode='markers', name="Sim", marker=dict(color=self.vel/self.vel.max()), legendgroup=f"group1", showlegend=False), row=2, col=2)
-        fig.add_trace(go.Scattergl(x=self.track.x_out_raw, y=self.track.y_out_raw, mode='markers', name="Real", marker=dict(color=self.track.vel/self.vel.max()), legendgroup=f"group3", showlegend=False), row=2, col=2)
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.u_crit, self.track.u, self.track.x_ss), y=np.interp(self.track.u_crit, self.track.u, self.track.y_ss), mode='markers', name="Time Diff", marker=dict(color=np.clip(self.ddt, -0.075, 0.075)), legendgroup=f"group4", showlegend=True), row=2, col=2)
-        fig.add_trace(go.Scattergl(x=self.track.x_ss, y=self.track.y_ss, mode='markers', name="Beta Angle", marker=dict(color=self.track.real_beta), legendgroup=f"group5", showlegend=True), row=2, col=2)
+        # fig.add_trace(go.Scattergl(x=np.interp(self.track.u_crit, self.track.u, self.track.x_ss), y=np.interp(self.track.u_crit, self.track.u, self.track.y_ss), mode='markers', name="Sim", marker=dict(color=self.vel/self.vel.max()), legendgroup=f"group1", showlegend=False), row=2, col=2)
+        # fig.add_trace(go.Scattergl(x=self.track.x_out_raw, y=self.track.y_out_raw, mode='markers', name="Real", marker=dict(color=self.track.vel/self.vel.max()), legendgroup=f"group3", showlegend=False), row=2, col=2)
+        # fig.add_trace(go.Scattergl(x=np.interp(self.track.u_crit, self.track.u, self.track.x_ss), y=np.interp(self.track.u_crit, self.track.u, self.track.y_ss), mode='markers', name="Time Diff", marker=dict(color=np.clip(self.ddt, -0.075, 0.075)), legendgroup=f"group4", showlegend=True), row=2, col=2)
+        # fig.add_trace(go.Scattergl(x=self.track.x_ss, y=self.track.y_ss, mode='markers', name="Beta Angle", marker=dict(color=self.track.real_beta), legendgroup=f"group5", showlegend=True), row=2, col=2)
         fig.update_xaxes(title_text='East-West (m)', row=2, col=2)
         fig.update_yaxes(title_text='North-South (m)', row=2, col=2)
 
@@ -288,7 +288,7 @@ class RunSim():
 
         if angles:
             row += 1
-            fig.add_trace(go.Scattergl(x=c, y=self.track.real_beta, mode='lines', name="Beta Angle", legendgroup=f"group113", showlegend=True), row=row, col=1)
+            # fig.add_trace(go.Scattergl(x=c, y=self.track.real_beta, mode='lines', name="Beta Angle", legendgroup=f"group113", showlegend=True), row=row, col=1)
             fig.add_trace(go.Scattergl(x=b, y=self.beta, mode='lines', name="Beta Angle Sim", legendgroup=f"group118", showlegend=True), row=row, col=1)
             fig.add_trace(go.Scattergl(x=b, y=self.delta, mode='lines', name="Delta Angle Sim", legendgroup=f"group119", showlegend=True), row=row, col=1)
             if delta_beta_est:
@@ -492,16 +492,16 @@ class RunSim():
             fig7 = MMD_3D_Graphs(self.ay_it1, self.yaw_it1, self.ax_it1, self.las.vels, self.valid_1)
 
             fig7.add_trace(go.Scatter3d(x=self.lat, y=self.omega_dot, z=self.lon, mode='markers', marker=dict(size=2, color=self.dt_dx, colorscale='Viridis' ), name="Sim"))
-            fig7.add_trace(go.Scatter3d(x=self.track.raw_track["G_Force_Lat"]["Value"][0, 0][0, :]*9.81, y=self.track.get_ch("__yacc"), z=self.track.raw_track["G_Force_Long"]["Value"][0, 0][0, :]*9.81, mode='lines', name="Real"))
+            fig7.add_trace(go.Scatter3d(x=self.track.get_ch("__acc_y"), y=self.track.get_ch("__yacc"), z=self.track.get_ch("__acc_x"), mode='lines', name="Real"))
 
             fig7.show()
 
         fig6 = go.Figure(data=[
             go.Scatter3d(x=self.lat, y=self.omega_dot, z=self.lon, mode='lines'),
             go.Scatter3d(x=self.lat, y=self.omega_dot, z=self.lon, mode='markers', marker=dict(size=2, color=self.dt_dx, colorscale='Viridis')),
-            go.Scatter3d(x=self.track.raw_track["G_Force_Lat"]["Value"][0, 0][0, :]*9.81, y=self.track.get_ch("__yacc"), z=self.track.raw_track["G_Force_Long"]["Value"][0, 0][0, :]*9.81, mode='lines'),
+            go.Scatter3d(x=self.track.get_ch("__acc_y"), y=self.track.get_ch("__yacc"), z=self.track.get_ch("__acc_x"), mode='lines'),
             go.Scatter3d(x=self.lat[self.critc], y=self.omega_dot[self.critc], z=self.lon[self.critc], mode='markers', marker=dict(size=1)),
-            go.Scatter3d(x=self.track.lat_acc, y=self.track.get_ch("__yacc"), z=self.track.long_acc, mode='markers', marker=dict(size=2, color=self.track.real_vel, colorscale='Viridis')),
+            # go.Scatter3d(x=self.track.get_ch("__acc_y"), y=self.track.get_ch("__yacc"), z=self.track.get_ch("__acc_x"), mode='markers', marker=dict(size=2, color=self.track.real_vel, colorscale='Viridis')),
             
         ])
 

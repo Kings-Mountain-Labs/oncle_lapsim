@@ -106,3 +106,15 @@ def smooth_gps(gps: GPS, sc: int, spl_sm: float = 0.85):
     new_gps.raw_time = clean_interp(new_gps.dist, gps.dist, gps.raw_time)
     new_gps.gps_time = clean_interp(new_gps.dist, gps.dist, gps.gps_time)
     return new_gps
+
+def derive_chan_gps(gps: GPS, data: np.ndarray, name: str, short_name: str = None, unit: str = "") -> Channel:
+    new_chan = Channel()
+    new_chan.name = name
+    if short_name is None:
+        new_chan.short_name = name
+    else:
+        new_chan.short_name = short_name
+    new_chan.unit = unit
+    new_chan.time = gps.raw_time
+    new_chan.data = data
+    return new_chan
