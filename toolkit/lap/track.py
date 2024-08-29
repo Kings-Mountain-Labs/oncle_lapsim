@@ -54,8 +54,8 @@ class Track:
         # My best guess is that it in the range of 5-10m 
         dd = self.smooth_gps.dist[2] - self.smooth_gps.dist[0]
         butter_b, butter_a = butter(butter_order, 1/1.5, 'low', analog=False, fs=1/(dd/2))
+        self.k[:60] = 0
         self.k = filtfilt(butter_b, butter_a, self.k)
-        self.k[0] = 0
         self.track_normals = linenormals2d(track.T)
         self.angle = np.rad2deg(np.unwrap(np.arctan2(self.track_normals[:, 1], self.track_normals[:, 0]) - np.average(np.arctan2(self.track_normals[0:10, 1], self.track_normals[0:10, 0])))) * -1
         self.u_crit = self.smooth_gps.dist

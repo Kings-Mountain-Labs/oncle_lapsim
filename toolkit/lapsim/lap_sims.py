@@ -136,7 +136,7 @@ class RunSim():
         else:
             self.mmd3d_gen = True
             start = time.time()
-            self.ay_it1, self.yaw_it1, _, self.ax_it1, self.delta_1, self.beta_1, self.kappa_1, self.valid_1, self.LAS_point_raw = self.car.MMD_3D_Long(mu_corr=self.mu)
+            self.ay_it1, self.yaw_it1, _, self.ax_it1, self.delta_1, self.beta_1, self.kappa_1, self.valid_1, self.LAS_point_raw = self.las.MMD_3D_Long(mu_corr=self.mu)
             print(f"Time: {(time.time() - start):.2f}")
 
     def generate_LAS_points(self, use_mmd3d=False):

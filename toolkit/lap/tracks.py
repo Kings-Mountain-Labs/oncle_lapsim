@@ -18,8 +18,8 @@ def get_MIS_2017_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -42,8 +42,8 @@ def get_MIS_2017_End1_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -67,8 +67,8 @@ def get_MIS_2017_End2_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -91,8 +91,8 @@ def get_MIS_2017_AX_1_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -115,8 +115,8 @@ def get_MIS_2017_AX_2_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -139,8 +139,8 @@ def get_MIS_2017_AX_3_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)
@@ -163,8 +163,8 @@ def get_MIS_2017_AX_4_track(sc) -> Track:
     data_dict["__nl_rr"] = unit_conversion(data_dict["Load_Cell_Force_RR"], "N", LB_TO_KG * G * -1 / mr, "Normal Load Force RR", "NL_RR")
     data_dict["__steering_angle"] = deg2rad_chan(data_dict["Steering_Wheel_Angle"])
     data_dict["__acc_x"] = unit_conversion(data_dict["G_Force_Lat"], "m/s^2", G, "Acceleration X", "acc_x")
-    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", G, "Acceleration Y", "acc_y")
-    data_dict["__acc_y"].data += -G
+    data_dict["__acc_y"] = unit_conversion(data_dict["G_Force_Vert"], "m/s^2", -G, "Acceleration Y", "acc_y")
+    data_dict["__acc_y"].data += G
     data_dict["__acc_z"] = unit_conversion(data_dict["G_Force_Long"], "m/s^2", G, "Acceleration Z", "acc_z")
     data_dict["__gyro_z"] = deg2rad_chan(data_dict["Vehicle_Yaw_Rate"])
     data_dict["__yacc"] = derivative_chan(data_dict["__gyro_z"], "Yaw Acceleration", "__yacc", "rad/s^2", 20)

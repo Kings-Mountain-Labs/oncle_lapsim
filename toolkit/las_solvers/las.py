@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 from toolkit.common.constants import G
 from toolkit.common.maths import powspace
 from abc import ABC, abstractmethod
+import plotly.graph_objs as go
 
 class LAS(ABC):
     solver: Steady_State_Solver
@@ -33,7 +34,7 @@ class LAS(ABC):
         pass
 
     @abstractmethod
-    def plot_las(self, fig):
+    def plot_las(self, fig: go.Figure):
         pass
 
     def find_limit(self, car: Car, v_avg, long_g, func, beta_lim = 7, delta_lim = 15, use_drag=True, mu = 1.0, b_guess = 0.0, d_guess = 0.0):
@@ -42,7 +43,7 @@ class LAS(ABC):
         this has lots of corner cases and is not very robust, but it is way faster than the actual gradient descent solvers i have tried
         this needs to be fixed, badly
         """
-        itt = 0
+        itt: int = 0
         delta_bins, beta_bins = [], []
         valid_points = []
 
