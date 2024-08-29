@@ -302,4 +302,9 @@ class Multi_Layer_LAS(LAS):
                 opacity=0.50,
                 showscale=True
             ))
-            
+        
+    def get_xyzijk(self, vv:float = 15.0):
+        x, y, z, i, j, k = limit_surface(interp_LAS_corner(vv, self.vels, self.longAcc_forward), interp_LAS_corner(vv, self.vels, self.longAcc_reverse), interp_LAS_surface(vv, self.vels, self.aymax_l), interp_LAS_surface(vv, self.vels, self.yawmax_l))
+        verts = np.array([x, y, z]).T
+        faces = np.array([i, j, k]).T
+        return verts, faces
