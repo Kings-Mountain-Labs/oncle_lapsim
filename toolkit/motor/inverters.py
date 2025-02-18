@@ -1,19 +1,13 @@
 from .inverter import Inverter
 
-def get_pm100dx_with_228mv():
-    return Inverter(221, 453)
+PM100DX_228MV = Inverter(221, 453, 480)
 
-def get_pm100dx_with_228hv():
-    return Inverter(150, 339)
+PM100DX_228HV = Inverter(150, 339, 480)
 
-def get_pm100dx_with_208mv():
-    return Inverter(425, 425)
+PM100DX_208MV = Inverter(425, 425, 480)
 
-def get_pm100dx_with_208hv():
-    return Inverter(283, 150)
+PM100DX_208HV = Inverter(283, 150, 480)
 
-def get_pm100dx_with_188mv():
-    return Inverter(424, 200)
+PM100DX_188MV = Inverter(424, 200, 480)
 
-def get_pm100dx_with_188hv():
-    return Inverter(283, 150)
+PM100DX_118MV = Inverter(283, 150, 480)

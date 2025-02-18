@@ -1,24 +1,27 @@
 import numpy as np
 from .transforms import calculate_real_power, calc_abc
-from astropy import units as u
-
+from .inverter import Inverter
+from .inverters import PM100DX_228MV
 class Motor:
     name: str = ""
-    max_rate: u.Quantity[u.PhysicalType("angular velocity")] = 6500 * u.rpm
-    max_torque: u.Quantity[u.PhysicalType("torque")] = 231 * u.N * u.m
-    max_phase_current: u.Quantity[u.PhysicalType("current")] = 340 * u.A
-    Ld: u.Quantity[u.PhysicalType("inductance")] = 76 * u.uH
-    Lq: u.Quantity[u.PhysicalType("inductance")] = 79 * u.uH
-    Rs: u.Quantity[u.PhysicalType("resistance")] = 0.0071 * u.ohm
+    max_rate = 6500
+    max_torque = 231
+    max_phase_current = 340
+    Ld = 0.000076
+    Lq = 0.000079
+    Rs = 0.0071
     poles: int = 10
-    Fl: u.Quantity[u.PhysicalType("magnetic flux")] = 0.0355 * u.Wb
-    rotor_inertia: u.Quantity[u.PhysicalType("moment of inertia")] = 0.0383 * u.kg * u.m**2
-    mass: u.Quantity[u.PhysicalType("mass")] = 12.4 * u.kg
+    Fl = 0.0355
+    rotor_inertia = 0.0383
+    mass = 12.4
+
+    def __init__(self, name):
+        self.name = name
 
     def get_torque(self, I_d, I_q):
         return 3 / 2 * self.poles * I_q * (self.Fl - I_d * (self.Lq - self.Ld))
 
-    def get_qd_currents(self, w, torque_req, voltage, use_mtpa=False):
+    def get_qd_currents(self, w, torque_req, voltage, inverter: Inverter = PM100DX_228MV, use_mtpa=False):
         w_e = w * self.poles
         if w_e == 0:
             w_e += 1e-3
@@ -59,15 +62,15 @@ class Motor:
 
         roots = self.calc_iq_fw_roots(w_e, v_max, T_ref_mid)
         roots = roots[np.isreal(roots)]
-        I_q_fw = min(max(max(roots.real), 0), self.I_qmax)
+        I_q_fw = min(max(max(roots.real), 0), inverter.i_q_limit)
         I_d_fw = -self.Fl / self.Ld + (1 / self.Ld) * np.sqrt(
             (v_max**2 / (w_e**2)) - (self.Lq * I_q_fw) ** 2
         )
         k = 1
         if I_d_fw > 0:
             I_d_fw = 0
-        if I_d_fw < -self.I_dmax:
-            I_d_fw = -self.I_dmax
+        if I_d_fw < -inverter.i_d_limit:
+            I_d_fw = -inverter.i_d_limit
             k = 2
 
         # print(f"I_d_fw: {I_d_fw} I_q_fw: {I_q_fw} a: {self.calc_max_iq(w_e, voltage, I_d_fw)}")
