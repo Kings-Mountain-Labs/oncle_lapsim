@@ -1,7 +1,7 @@
 import numpy as np
 from toolkit.cars.car_configuration import Car
 from .sss import Steady_State_Solver
-from toolkit.common.maths import to_vel_frame, clip
+from toolkit.common.maths import to_vel_frame, clip, to_car_frame
 
 class Iterative_Solver(Steady_State_Solver):
     def __init__(self):
@@ -10,6 +10,7 @@ class Iterative_Solver(Steady_State_Solver):
 
     def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = 0.0, use_drag = False, long_err = 0.01, lat_err = 0.001, zeros = True, use_torque_lim=False, use_break_lim=True):
         yaw_it, cn_it, ax_it = 0.0, 0.0, 0.0
+        ay_v = 0.0
         omega = ay_it / v_avg #Initial yaw rate [rad/s]
         kappax_fl, kappax_fr, kappax_rl, kappax_rr = 0, 0, 0, 0
         bruh, long_error, total_fx = 0, 1, 0
@@ -35,7 +36,8 @@ class Iterative_Solver(Steady_State_Solver):
             ay_targ = ay_it
             # Generate slip angles for two-track model as a function of
             # beta and delta along with included parameters for toe.
-            fzfl, fzfr, fzrl, fzrr, _, _ = car.find_contact_patch_loads(long_g=ax_it, lat_g=ay_it, vel=v_avg)
+            ax_c, ay_c = to_car_frame(long_g, ay_v, beta_x)
+            fzfl, fzfr, fzrl, fzrr, _, _ = car.find_contact_patch_loads(long_g=ax_c, lat_g=ay_c, vel=v_avg)
             delta_fl, delta_fr, delta_rl, delta_rr = car.calculate_tire_delta_angle(delta_x, 0.0, 0.0, 0.0)
             [safl, safr, sarl, sarr] = car.calculate_slip_angles(v_avg, omega, beta_x, delta_fl, delta_fr, delta_rl, delta_rr)
             v_fl, v_fr, v_rl, v_rr = car.calculate_vel_at_tire(v_avg, omega, beta_x)
