@@ -1,22 +1,22 @@
-from numba import njit
+# from numba import njit
 import numpy as np
 
-@njit
+# @njit
 def skew(x):
     # np.dot(skew(x), y) = np.cross(x, y)
     return np.array([[0, -x[2], x[1]],
                      [x[2], 0, -x[0]],
                      [-x[1], x[0], 0]])
-@njit
+# @njit
 def cross_2d(u, v):
     return u[0] * v[1] - u[1] * v[0]
 
-@njit
+# @njit
 def norm_2d(v):
     return np.sqrt(v[0] ** 2 + v[1] ** 2)
 
 
-@njit
+# @njit
 def is_point_in_triangle(p, p1, p2, p3):
     # Project points onto the plane defined by p1, p2, and p3
     # we need to make the points 2d so we can use signed distances
@@ -54,7 +54,7 @@ def is_point_in_triangle(p, p1, p2, p3):
         distances *= -1.0
     return distances.max()
 
-@njit
+# @njit
 def db_for_point_in_triangle(p, p1, p2, p3):
     # Project points onto the plane defined by p1, p2, and p3
     # we need to make the points 2d so we can use signed distances

@@ -1,0 +1,57 @@
+[project]
+name = "Oncle-LapSim"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "csaps>=1.2.0",
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+    "llvmlite>=0.44.0",
+    "matplotlib>=3.10.0",
+    "maturin>=1.8.2",
+    "mcap>=1.2.2",
+    "nbformat>=5.10.4",
+    "numpy>=2.2.3",
+    "opencv-python>=4.11.0.86",
+    "pandas>=2.2.3",
+    "plotly>=6.0.0",
+    "pymap3d>=3.1.0",
+    "python-can>=4.5.0",
+    "pyulog>=1.1.0",
+    "rerun-sdk>=0.22.0",
+    "ruff>=0.9.6",
+    "scalene>=1.5.51",
+    "scikit-learn>=1.6.1",
+    "scipy>=1.15.2",
+    "torch>=2.6.0",
+    "torchaudio>=2.6.0",
+    "torchvision>=0.21.0",
+    "tqdm>=4.67.1",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
+]
+torchvision = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
+]
+torchaudio = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

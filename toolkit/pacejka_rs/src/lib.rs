@@ -15,7 +15,9 @@ use structs::*;
 #[pyclass(module = "pacejka_rs")]
 pub struct PyPacejka {
     pacejka: PacejkaParameters,
+    #[pyo3(get, set)]
     upper_s_r: f64,
+    #[pyo3(get, set)]
     lower_s_r: f64,
     x: Array1<f64>,
 }
@@ -120,25 +122,6 @@ impl PyPacejka {
         } else {
             (input.kappa, false, fx)
         }
-    }
-
-    pub fn __setstate__(&mut self, py: Python, state: PyObject) -> PyResult<()> {
-        match state.extract::<&PyBytes>(py) {
-            Ok(s) => {
-                self.pacejka = deserialize(s.as_bytes()).unwrap();
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
-    }
-
-    pub fn __getstate__(&self, py: Python) -> PyResult<PyObject> {
-        Ok(PyBytes::new(py, &serialize(&self.pacejka).unwrap()).to_object(py))
-    }
-
-    pub fn __getnewargs__<'py>(&self, py: Python<'py>) -> PyResult<(i32, &'py PyArray1<f64>)> {
-        let pyarray = self.x.to_owned().into_pyarray(py);
-        Ok((0, pyarray))
     }
 
     #[pyo3(name = "s_r")]
@@ -270,7 +253,7 @@ impl PyPacejka {
         phi: f64,
         mu: f64,
         flip_sa: bool,
-    ) -> (&'py PyArray1<f64>, &'py PyArray1<f64>, &'py PyArray1<f64>) {
+    ) -> (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>) { // this is really the wrong way to do this but idc
         let (fx, fy, mz) = self.sr_sweep(
             fz,
             alpha,
@@ -293,7 +276,7 @@ impl PyPacejka {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pacejka_rs(py: Python, m: &PyModule) -> PyResult<()> {
+fn pacejka_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyPacejka>()?;
     Ok(())
 }

@@ -2,11 +2,11 @@ from toolkit.cars.car_configuration import Car
 from toolkit.lap.track import Track
 import numpy as np
 import time
-from numba import njit
+# from numba import njit
 from toolkit.common.constants import *
 from toolkit.las_solvers.las import LAS
 
-@njit
+# @njit
 def find_crits(vels):
     crit_diff = np.sign(vels[:-1] - vels[1:])
     critd_it = np.argwhere((((crit_diff[:-1] + crit_diff[1:]) == 0) | (vels[1:-1] == vels[2:])) & (crit_diff[:-1] > 0)).T[0] + 1
@@ -21,7 +21,7 @@ def find_crits(vels):
 # If the next step rolls you below the starting point, that is the same as
 # going to the  of the track, so we roll back to the last
 # index. This prevents the code from breaking.
-@njit
+# @njit
 def check_ind(j, k, ind, len_nd, asc=False):
     if asc:
         if ind >= len_nd or ind <= -len_nd:

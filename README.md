@@ -17,7 +17,7 @@ This getting started guide uses the Github CLI to clone the repository because w
     - [Install VS Code](https://code.visualstudio.com/download)
     - [Install Git for Windows](https://git-scm.com/downloads)
     - [Install the Github CLI](https://cli.github.com/)
-    - [Install Python 3.11](https://www.python.org/downloads/) <span style="color:red">ABSOLUTELY MAKE SURE TO CHECK THE BOX THAT SAYS ADD PYTHON TO PATH</span>
+    - [Install UV](https://docs.astral.sh/uv/getting-started/installation/)
     - [Install Rust Toolchain](https://www.rust-lang.org/tools/install) <span style="color:red">ON WINDOWS, IT WILL ASK YOU IF YOU WANT TO INSTALL MSVC, YOU DO WANT TO</span>
     - Restart your computer for good measure
 2. Clone the repository
@@ -27,38 +27,25 @@ This getting started guide uses the Github CLI to clone the repository because w
     - Navigate to the folder you want to clone to (`cd C:\Users\username\Documents\` for instance and `cd ..` to back one)
     - Paste and run the command you copied
     - Select the folder you want to clone to and clone
-    - Now `cd VehicleDynamics` to get into the repository
+    - Now `cd oncle_lapsim` to get into the repository
     - And `code .` to open VS Code in the repository
 3. Install the dependencies
-    1. Create a virtual environment
-        - Open a terminal (in VS Code) in the folder you cloned to
-        - Create a python virtual environment
-        ```console
-            python -m venv .venv
-        ```
-        - Activate the virtual environment
-        ```console
-            .venv\Scripts\activate
-        ```
-        - In the terminal you should see <span style="color:limegreen">(.venv)</span> at the start of the line, this means you are in the virtual environment, if you ever need to get into the virtual environment again just run `.venv\Scripts\activate` again (you must be in the main folder of the repository)
-        - VS Code should also ask you if you want to use the virtual environment, click yes
-        - After you click yes whenever you create a new terminal in VS Code it shouls automatically activate the virtual environment
-        - Run `python --version` to make sure you are using 3.11
-    2. Install the dependencies
-        - You must be in the virtual environment for this to work, you should see <span style="color:limegreen">(.venv)</span> at the start of the line in the terminal
-        - Install the python dependencies
-        ```console
-        pip install -r requirements.txt
-        ```
-        - Building the Tire Model Improvements (not needed for the simulation to run, but causes dramatic performance improvements)
-            - Create a new terminal in VS Code
-            - Change directories to the folder with the tire model lib
-        ```console
-        cd Functions\rust_app\pacejka_rs\
-        ```
-            - Compile the Rust libraries (this will take a while the first time and you will need to do it whenever I have updated the rust code)
-        ```console
-        maturin develop --release
-        ```
-            - You should see a bunch of stuff about compiling and linking and then it should say `Build succeeded, installing package`
-            - Now you can close the terminal
+    - Open a terminal (in VS Code) in the folder you cloned to
+    ```console
+        uv sync
+    ```
+    - The first time you do this you will invalidate your current terminal (vs-code will make it orange) and you just need to make a new terminal
+    - Now, in vscode, press Cmd+Shift+P and type "Python: Select Interpreter" and select the virtual environment in (.venv)
+    
+    - Building the Tire Model Improvements (not needed for the simulation to run, but causes dramatic performance improvements)
+        - Create a new terminal in VS Code
+        - Change directories to the folder with the tire model lib
+    ```console
+    cd toolkit\pacejka_rs\
+    ```
+        - Compile the Rust libraries (this will take a while the first time and you will need to do it whenever I have updated the rust code)
+    ```console
+    maturin develop --release
+    ```
+        - You should see a bunch of stuff about compiling and linking and then it should say `Build succeeded, installing package`
+        - Now you can close the terminal

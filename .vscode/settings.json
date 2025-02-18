@@ -28,5 +28,8 @@
         "xaxes",
         "yaxes"
     ],
-    "jupyter.notebookFileRoot": "${workspaceFolder}"
+    "jupyter.notebookFileRoot": "${workspaceFolder}",
+    "rust-analyzer.linkedProjects": [
+    "toolkit/pacejka_rs/Cargo.toml",
+    ]
 }
