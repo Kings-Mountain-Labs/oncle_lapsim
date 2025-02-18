@@ -167,3 +167,5 @@ data/tire_data/*.mat
 data/lap_data/*.mat
 
 *.mapbox_token
+*/.DS_Store
+.DS_Store
