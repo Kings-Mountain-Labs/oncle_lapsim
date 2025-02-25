@@ -94,6 +94,7 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
         true_beta = np.zeros([len_new_dist])
     beta_old = np.array(np.deg2rad(true_beta))
     beta_dot_old = np.gradient(beta_old) / dd
+    count = np.zeros([len_new_dist])
     err = []
     begin = time.time()
     last = begin
@@ -122,6 +123,7 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
                 vb_power = np.sqrt(vv**2 + 2 * (car.find_tractive_force(vv) / car.mass) * ds)
                 v_it[ind+j], latAcc_it[ind+j], longAcc_it[ind+j], omegadot_it[ind+j], D_fcheck[ind+j], delta_it[ind+j], beta_it[ind+j], floor = las.solve_point(vv, v_it[ind+k], v_it[ind+j], ds, new_curvature[ind + k], new_curvature[ind + j], beta_dot_old[ind + k], beta_dot_old[ind + j], beta_old[ind + j], latAcc_it[ind+j], longAcc_it[ind+j], omegadot_it[ind+j], True, vbp=vb_power)
 
+                count[ind+j] += 1
                 k += 1
                 j += 1
                 j, k, ind = check_ind(j, k, ind, len_new_dist, True)
@@ -144,6 +146,7 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
                 # vb_break = np.sqrt(v_it[ind - k]**2 + 2 * (car.find_tractive_force_braking(v_it[ind - k]) / car.mass) * ds)
                 v_it[ind-j], latAcc_it[ind-j], longAcc_it[ind-j], omegadot_it[ind-j], D_rcheck[ind-j], delta_it[ind-j], beta_it[ind-j], floor = las.solve_point(vv, v_it[ind-k], v_it[ind-j], ds, new_curvature[ind - k], new_curvature[ind - j], beta_dot_old[ind - k], beta_dot_old[ind - j], beta_old[ind - j], latAcc_it[ind-j], longAcc_it[ind-j], omegadot_it[ind-j], False) # , vbb=vb_break
 
+                count[ind-j] += 1
                 k += 1
                 j += 1
                 j, k, ind = check_ind(j, k, ind, len_new_dist, False)
@@ -170,4 +173,4 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     dt = np.zeros(len(v_it))
     dt[1:] = 2 * (new_dist[1:] - new_dist[:-1]) / (v_it[1:] + v_it[:-1])
 
-    return longAcc_it, latAcc_it, omegadot_it, np.nan_to_num(dt), long_G, v_it, new_velocity, dt, critc, err, delta_it, beta_it, D_fcheck, D_rcheck
+    return longAcc_it, latAcc_it, omegadot_it, np.nan_to_num(dt), long_G, v_it, new_velocity, dt, critc, err, delta_it, beta_it, D_fcheck, D_rcheck, count

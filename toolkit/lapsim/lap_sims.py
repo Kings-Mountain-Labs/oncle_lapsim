@@ -91,11 +91,11 @@ class RunSim():
             beta_init = np.zeros(self.track.k.shape[0])
             if self.use_beta_init:
                 beta_init = self.track.real_beta
-            self.lon, self.lat, self.omega_dot, self.dt, self.long, self.vel, self.vel_init, self.ddt, self.critc, self.iters, self.delta, self.beta, self.d_f, self.d_r = sim_qss(self.car, self.track, self.las, convergence_target, true_beta=beta_init)
+            self.lon, self.lat, self.omega_dot, self.dt, self.long, self.vel, self.vel_init, self.ddt, self.critc, self.iters, self.delta, self.beta, self.d_f, self.d_r, self.count = sim_qss(self.car, self.track, self.las, convergence_target, true_beta=beta_init)
         elif sim_type == 'qts':
             if self.las.set_las is None or self.las.set_las != (mu, bins):
                 self.las.generate_las(self.car, vel_bins=bins, mu=mu)
-            self.lon, self.lat, self.omega_dot, self.dt, self.long, self.vel, self.vel_init, self.ddt, self.critc, self.iters, self.delta, self.beta, self.d_f, self.d_r = sim_qts(self.car, self.track, self.las, convergence_target)
+            self.lon, self.lat, self.omega_dot, self.dt, self.long, self.vel, self.vel_init, self.ddt, self.critc, self.iters, self.delta, self.beta, self.d_f, self.d_r, self.count = sim_qts(self.car, self.track, self.las, convergence_target)
         else:
             raise ValueError(f"Sim type {sim_type} not recognized")
         
