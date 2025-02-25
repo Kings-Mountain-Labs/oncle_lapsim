@@ -44,6 +44,23 @@ def check_ind(j, k, ind, len_nd, asc=False):
             k -= 1
     return j, k, ind
 
+def calc_accel(car: Car, las: LAS, j_ind: int, k_ind: int, dd: float, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, curvature, beta_dot_old, beta_old):
+    ds = new_dist[j_ind] - new_dist[k_ind]
+    if abs(ds) > abs(dd) * 3: # this should only happen for a flying lap
+        ds = dd
+    vv = (v_it[k_ind] + v_it[j_ind]) / 2
+    vb_power = np.sqrt(vv**2 + 2 * (car.find_tractive_force(vv) / car.mass) * ds)
+    return las.solve_point(vv, v_it[k_ind], v_it[j_ind], ds, curvature[k_ind], curvature[j_ind], beta_dot_old[k_ind], beta_dot_old[j_ind], beta_old[j_ind], latAcc_it[j_ind], longAcc_it[j_ind], omegadot_it[j_ind], True, vbp=vb_power)
+
+def calc_decel(car: Car, las: LAS, j_ind: int, k_ind: int, dd: float, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, curvature, beta_dot_old, beta_old):
+    ds = -(new_dist[k_ind] - new_dist[j_ind])
+    if abs(ds) > abs(dd) * 3:
+        ds = -dd
+        
+    vv = (v_it[k_ind] + v_it[j_ind]) / 2
+    # vb_break = np.sqrt(v_it[ind - k]**2 + 2 * (car.find_tractive_force_braking(v_it[ind - k]) / car.mass) * ds)
+    return las.solve_point(vv, v_it[k_ind], v_it[j_ind], ds, curvature[k_ind], curvature[j_ind], beta_dot_old[k_ind], beta_dot_old[j_ind], beta_old[j_ind], latAcc_it[j_ind], longAcc_it[j_ind], omegadot_it[j_ind], False)
+
 def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False):
     # Line Segment of LSBC (Bottom-Right of MMD) (Patton, 74)
     lim_ind = int(las.vel_bins/2)
@@ -83,7 +100,7 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     dd = track.u[2] - track.u[0]
 
     # Initialize counters and other variables for iteration
-    k, j, n, v_error = 0, 1, 1, 1
+    k, j, n, v_error = 0, 1, 0, 1
 
     len_new_dist = len(new_dist)
 
@@ -97,6 +114,10 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     # the cutoff frequency should be approximately the distance the car travels between 3 cones in a tight slalom in units of 1/m
     # My best guess is that it in the range of 5-10m 
     butter_b, butter_a = butter(butter_order, 1/10.0, 'low', analog=False, fs=1/(dd/2))
+
+    count = np.zeros([len_new_dist])
+    last_changed = np.zeros([len_new_dist])
+
     err = []
     begin = time.time()
     last = begin
@@ -108,6 +129,7 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
         # Limit velocities are calculated by starting from critical points and
         # identifying the next velocity based on acceleration limits (LAS of Octahedron)
         for i, ind in enumerate(critc):
+
             # Working from the front side
 
             j, k, ind = check_ind(1, 0, ind, len_new_dist, True)
@@ -118,13 +140,9 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
                 if floor:
                     break
                 checks += 1
-                ds = new_dist[ind + j] - new_dist[ind + k]
-                if abs(ds) > abs(dd):
-                    ds = dd
-                vv = (v_it[ind + k] + v_it[ind + j]) / 2
-                vb_power = np.sqrt(vv**2 + 2 * (car.find_tractive_force(vv) / car.mass) * ds)
-                v_it[ind+j], latAcc_it[ind+j], longAcc_it[ind+j], omegadot_it[ind+j], D_fcheck[ind+j], delta_it[ind+j], beta_it[ind+j], floor = las.solve_point(vv, v_it[ind+k], v_it[ind+j], ds, new_curvature[ind + k], new_curvature[ind + j], beta_dot_old[ind + k], beta_dot_old[ind + j], beta_old[ind + j], latAcc_it[ind+j], longAcc_it[ind+j], omegadot_it[ind+j], True, vbp=vb_power)
-
+                v_it[ind+j], latAcc_it[ind+j], longAcc_it[ind+j], omegadot_it[ind+j], D_fcheck[ind+j], delta_it[ind+j], beta_it[ind+j], floor = calc_accel(car, las, ind+j, ind+k, dd, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, new_curvature, beta_dot_old, beta_old)
+                count[ind+j] += 1
+                last_changed[ind+j] = n
                 k += 1
                 j += 1
                 j, k, ind = check_ind(j, k, ind, len_new_dist, True)
@@ -138,18 +156,29 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
                 if floor:
                     break
                 checks += 1
-
-                ds = -(new_dist[ind - k] - new_dist[ind - j])
-                if abs(ds) > abs(dd):
-                    ds = -dd
-                    
-                vv = (v_it[ind - k] + v_it[ind - j]) / 2
-                # vb_break = np.sqrt(v_it[ind - k]**2 + 2 * (car.find_tractive_force_braking(v_it[ind - k]) / car.mass) * ds)
-                v_it[ind-j], latAcc_it[ind-j], longAcc_it[ind-j], omegadot_it[ind-j], D_rcheck[ind-j], delta_it[ind-j], beta_it[ind-j], floor = las.solve_point(vv, v_it[ind-k], v_it[ind-j], ds, new_curvature[ind - k], new_curvature[ind - j], beta_dot_old[ind - k], beta_dot_old[ind - j], beta_old[ind - j], latAcc_it[ind-j], longAcc_it[ind-j], omegadot_it[ind-j], False) # , vbb=vb_break
-
+                v_it[ind-j], latAcc_it[ind-j], longAcc_it[ind-j], omegadot_it[ind-j], D_rcheck[ind-j], delta_it[ind-j], beta_it[ind-j], floor = calc_decel(car, las, ind-j, ind-k, dd, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, new_curvature, beta_dot_old, beta_old)
+                count[ind-j] += 1
+                last_changed[ind-j] = n
                 k += 1
                 j += 1
                 j, k, ind = check_ind(j, k, ind, len_new_dist, False)
+
+            # Now solve for the critical point by solving the acceleration and deceleration separately and averaging them (this point should be near the equator of the LAS)
+            if last_changed[ind] +2 < n:
+                v_it_acc, latAcc_it_acc, longAcc_it_acc, omegadot_it_acc, _, delta_it_acc, beta_it_acc, floor = calc_accel(car, las, ind+1, ind-1, dd, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, new_curvature, beta_dot_old, beta_old)
+                v_it_dec, latAcc_it_dec, longAcc_it_dec, omegadot_it_dec, _, delta_it_dec, beta_it_dec, floor = calc_decel(car, las, ind-1, ind+1, dd, new_dist, v_it, latAcc_it, longAcc_it, omegadot_it, new_curvature, beta_dot_old, beta_old)
+                # print(f"Accelerating params: {v_it_acc:.2f}\t{latAcc_it_acc:.2f}\t{longAcc_it_acc:.2f}\t{omegadot_it_acc:.2f}\t{delta_it_acc:.2f}\t{beta_it_acc:.2f}")
+                # print(f"Decelerating params: {v_it_dec:.2f}\t{latAcc_it_dec:.2f}\t{longAcc_it_dec:.2f}\t{omegadot_it_dec:.2f}\t{delta_it_dec:.2f}\t{beta_it_dec:.2f}")
+
+                if (longAcc_it_acc < 0 and longAcc_it_dec > 0) or (longAcc_it_acc > 0 and longAcc_it_dec > 0) or (longAcc_it_dec < 0 and longAcc_it_acc < 0):
+                    v_it[ind] = (v_it_acc + v_it_dec) / 2
+                    latAcc_it[ind] = (latAcc_it_acc + latAcc_it_dec) / 2
+                    longAcc_it[ind] = (longAcc_it_acc + longAcc_it_dec) / 2
+                    omegadot_it[ind] = (omegadot_it_acc + omegadot_it_dec) / 2
+                    delta_it[ind] = (delta_it_acc + delta_it_dec) / 2
+                    beta_it[ind] = (beta_it_acc + beta_it_dec) / 2
+                    count[ind] += 1
+                    last_changed[ind] = n
                 
         v_error_list = np.abs(v_it_old - v_it)/ v_it
         v_error = np.nanmax(v_error_list)
@@ -169,6 +198,8 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
         last = time.time()
         checks = 0
         n = n + 1
+        if n > 15:
+            break
     if not silent:
         print(f"total time: {(time.time() - begin):.2f}")
 
@@ -177,6 +208,5 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     dt = np.zeros(len(v_it))
     dt[1:] = 2 * (new_dist[1:] - new_dist[:-1]) / (v_it[1:] + v_it[:-1])
 
-    # return longAcc_it, latAcc_it, omegadot_it, np.nan_to_num(dt), long_G, v_it, new_velocity, dt, critc, err, filtfilt(butter_b, butter_a, delta_it), filtfilt(butter_b, butter_a, beta_it), D_fcheck, D_rcheck
-    return longAcc_it, latAcc_it, omegadot_it, np.nan_to_num(dt), long_G, v_it, new_velocity, dt, critc, err, delta_it, beta_it, D_fcheck, D_rcheck
+    return longAcc_it, latAcc_it, omegadot_it, np.nan_to_num(dt), long_G, v_it, new_velocity, dt, critc, err, delta_it, beta_it, D_fcheck, D_rcheck, count, last_changed
 

@@ -47,10 +47,6 @@ def solve_point(aymax, yawmax, longAcc, facets, v_k, v_j, ds, k_k, k_j, bd_k, bd
             c_2 = -n_vector[0] / (2 * ds) - n_vector[1] * (k_k + k_j) / 8 - n_vector[2] * (k_j - bd_j) / (2 * ds)
             
             if c_2 == 0:
-                # print("c_2 is zero")
-                # print(c_0, c_1, c_2)
-                # print(point_a, point_b, point_c)
-                # print(a, b, c, len(corner_list), len(aymax), len(yawmax), v_k)
                 continue
             v_save, nps = calc_vel(c_0, c_1, c_2)
             if nps or v_save > max_vel:
@@ -287,7 +283,7 @@ class Multi_Layer_LAS(LAS):
         self.yawmax[ind] = self.yawmax_l[ind, self.add_layers] # long, lat, yaw, delta, beta
         self.yawmax_sa[ind] = self.yawmax_sa_l[ind, self.add_layers]
 
-    def plot_las(self, fig, vv:float = 15.0):
+    def plot_las(self, fig: go.Figure, vv:float = 15.0):
         x, y, z, i, j, k = limit_surface(interp_LAS_corner(vv, self.vels, self.longAcc_forward), interp_LAS_corner(vv, self.vels, self.longAcc_reverse), interp_LAS_surface(vv, self.vels, self.aymax_l), interp_LAS_surface(vv, self.vels, self.yawmax_l))
         # print(f"{x}\t{y}\t{z}\t{i}\t{j}\t{k}")
         fig.add_trace(go.Mesh3d(
