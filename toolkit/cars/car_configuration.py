@@ -44,7 +44,7 @@ def sr_variable_lim(v_a, v_b, sr, upper, lower):
 
 
 class Car:
-    def __init__(self, mass = 663 * LB_TO_KG, front_axle_weight = 0.49) -> None:
+    def __init__(self, mass = 663 * LB_TO_KG, front_axle_weight = 0.49, front_ackermann = "parallel", camber_type = "equal", toe_type = "simple", aero_type = "simple") -> None:
         # this needs to be redone so it is a sensible and easy to use constructor
         self.description = "This is for labeling in sweeps"
         self.debug = False
@@ -59,6 +59,22 @@ class Car:
         self.cd = 1.59 # frontal drag coefficient
         self.cl = 3.3 # frontal lift coefficient
         self.front_axle_downforce = .4 # CoP distribution toward front axle
+        self.aero_type = aero_type # how aero forces are calculated.
+            # "Simple" assumes the car to be level at all times.
+            # "Complex" will evaluate roll and pitch, and use that to modulate effective downforce. Note that this increases MMD time by ~30%
+
+        self.use_cop_migration = True # Experimental setting for applying COP migration as a function of pitch. Should eventually be merged into complex aero_type once confirmed to be correct.
+
+        roll_sensitivity_data = [[0, 1.6, 2.2], [1.0, 0.996, 0.993]] # Must be at least 3 data points.
+        self.roll_sensitivity = np.polyfit(roll_sensitivity_data[0], roll_sensitivity_data[1], 2)
+        pitch_sensitivity_data = [[-2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5], [64.08, 76.04, 85.06, 90.68, 91.12, 84.04, 81.54, 79.31, 76.26, 68.09]] # Must be at least O+1 data points (see below).
+        # pitch_sensitivity_data = [[-2, -1.169, 0.6, 0, 0.9], [3.64, 3.8, 3.86, 3.47, 3.184]] # Must be at least 5 data points.
+        # pitch_sensitivity_data = [[-1.5, -1.0, 0, 0.5, 1.0], [2.85, 3.22, 3.28, 3.15, 2.96]] # Must be at least 5 data points.
+        self.pitch_sensitivity = np.polyfit(pitch_sensitivity_data[0], pitch_sensitivity_data[1], 6 ) # Set the order to be at least 4, ideally 6. You need Order+1 data points
+        # pitch_cop_migration_data = [[-2, -1.169, 0.6, 0, 0.9], [1-0.497, 1-0.484, 1-0.51, 1-0.5664, 1-0.58]] # negative X is dive, Y is % DF front axle
+        pitch_cop_migration_data = [[-2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5], [.0729, .3478, .3777, .4275, .4079, .3530, .3406, .3203, .3086, .1851]] # negative X is dive, Y is % DF front axle
+        self.cop_pitch_sensitivity = np.polyfit(pitch_cop_migration_data[0], pitch_cop_migration_data[1], 6)
+
         self.izz = 78.5 # moment of inertia of vehicle
         # Front and Rear toe angles are per side, negative is toe out confirmed
         self.toe_front = -0.5
@@ -74,9 +90,16 @@ class Car:
         self.hu_f = 8 * IN_TO_M #Unsprung mass CG height
         self.hu_r = self.hu_f
 
+        # Axle Rates
+        # self.k_f_b = 223.11 * LB_PER_IN_TO_N_PER_M # Front Bump Stiffness (N/m), i.e. linear spring constant
+        # self.k_r_b = 220.65 * LB_PER_IN_TO_N_PER_M # Rear Bump Stiffness (N/m)
+        self.k_f_b = 18242*2
+        self.k_r_b = 18242*2
+
         self.power = 80000
         self.max_torque = 165
         self.drive_ratio = 4.1 # cock and balls
+        self.max_motor_rate = 8000 * (2 * 3.1415926 / 60) # maximum rad/s of motor 
 
         self.pedal_force = 75 * LB_TO_KG * G # force applied to pedal in N
         self.pedal_ratio = 4.5 # pedal ratio
@@ -90,6 +113,74 @@ class Car:
         self.front_pad_mu = 1.0 # friction coefficient
         self.rear_pad_mu = 1.0 # friction coefficient
         self.number_of_brake_pistons = 2
+
+        self.front_toe_gain = 0.01    # toe gain (deg/in)
+        self.rear_toe_gain = 0.00     # toe gain (deg/in)
+        self.front_ackermann = front_ackermann  # ackermann. true, parallel, or nonlinear. If nonlinear, ackermann_curve must be populated.
+            # I cannot figure out why using "true" causes type errors, nobody is hitting perfect true ackermann though so who cares imo.
+
+        self.ackermann_curve = [[-1.0, 0.0, 1.0], [-24.9, 0.0, 29.4]] 
+        # First array represents steering travel sample points (units do not matter). Second array represents tire angle (degrees).
+        # Consider a steering rack with a tie rod contact point in front of the spindle axis:
+        # Negative travel will make the front right tire point out.
+        # Positive travel will make the front right tire point in.
+
+        self.camber_type = camber_type # How roll/pitch camber is calculated. "equal", "simple", "combined", or "complex"
+            # equal assumes CAs of equal length, where deg body roll = deg camber change, and bump does not(? verify this) affect camber
+            # simple uses one linear camber gradient, in units of d_IA [d_deg] / d_bodyRoll [d_deg]
+            # combined uses two linear camber gradients, adding a bump camber gradient in units of d_IA [d_deg] / d_bump [d_in] to the roll camber
+            # complex uses a 2D array of camber given a combination of roll and bump conditions. [NOT IMPLEMENTED]
+
+            # Note: positive value is negative camber
+        self.front_camber_roll = 0.760 # 0.555 # camber gain under roll (deg/deg or rad/rad, they are equivalent)
+        self.front_camber_bump = 0.576 # 1.160 # camber gain under bump (deg/in)
+        self.rear_camber_roll = 0.760 # 0.833
+        self.rear_camber_bump = 0.576 # 0.480
+        # self.front_camber_roll = 0.555 # camber gain under roll (deg/deg or rad/rad, they are equivalent)
+        # self.front_camber_bump = 1.160 # camber gain under bump (deg/in)
+        # self.rear_camber_roll = 0.833
+        # self.rear_camber_bump = 0.480 # also old and unused afaict
+
+        self.use_camber_steer = True # Setting for using camber as a function of steer. Currently left as a separate variable until it's confirmed to be 100% accurate. Should eventually be merged into complex setting.
+        self.f_c_s = [[-30.0, -2.75], [-15, -1.61], [0, 0], [12.0, 0.48], [30.0, 0.45]] # Camber as a function of steer, POV FR tire
+        self.front_camber_steer = np.transpose(self.f_c_s)
+
+        self.toe_type = toe_type # How roll/pitch toe is calculated. "simple", "complex", or "complexfast"
+            # simple does not use any dynamic toe adjustments.
+            # complex will modulate toe according to the arrays provided below. There should almost never be a case where this is necessary over complexfast.
+            # complexfast uses a linear roll toe fit and parabolic bump toe fit. 
+
+        # x axis: roll [deg] or bump [in]
+        # y axis: toe [deg]
+        # note: positive roll is roll to the right, as if a left hand turn. This is okay because the MMDs define +Ay as a left turn.
+        # note: having more than 3 points will rapidly begin to affect performance, so keep it under 6. Roll can probably be 3, while bump should really be 5.
+        self.f_t_r = [[-1.67405, 0.03269],[0,0],[1.70826, -0.01786]]
+        self.front_toe_roll = np.transpose(self.f_t_r)
+
+        self.f_t_b = [[-1.01832, 0.02385],[-0.11985, 0.00119],[0.21543, -0.00098],[0.54620, 0.00097],[1.02280, 0.01235]]
+        self.front_toe_bump = np.transpose(self.f_t_b)
+
+        self.r_t_r = [[-1.65753, 0.02860],[0,0],[1.68088, -0.02806]]
+        self.rear_toe_roll = np.transpose(self.r_t_r)
+
+        self.r_t_b = [[-1.00983, 0.00372],[-0.80066, 0.00279],[-0.57357, 0.00190],[-0.11937, 0.00032],[0,0],[0.10775, -0.00032],[0.56204, -0.00092],[0.78922, -0.00084],[1.01644, -0.00042]]
+        self.rear_toe_bump = np.transpose(self.r_t_b)
+
+        #automatic parameter setting. Performs a polynomial fit to provided data so that the user doesn't need an external tool for complexfast evaluation
+        self.front_toe_roll_fast = np.polyfit(self.front_toe_roll[0], self.front_toe_roll[1], 1)[0]
+        self.front_toe_bump_fast = np.polyfit(self.front_toe_bump[0], self.front_toe_bump[1], 2)
+        self.rear_toe_roll_fast = np.polyfit(self.rear_toe_roll[0], self.rear_toe_roll[1], 1)[0]
+        self.rear_toe_bump_fast = np.polyfit(self.rear_toe_bump[0], self.rear_toe_bump[1], 2)
+
+        self.front_camber_steer_fast = np.polyfit(self.front_camber_steer[0], self.front_camber_steer[1], 2)
+        self.calculate_camber_steer_v = np.vectorize(self.calculate_camber_steer)
+
+
+        self.ack_nonlinear_v = np.vectorize(self.calculate_ackermann)
+        self.ack_true_v = np.vectorize(self.calculate_ackermann_true)
+        self.calculate_dynamic_toe_v = np.vectorize(self.calculate_dynamic_toe)
+        self.calculate_dynamic_toe_fast_v = np.vectorize(self.calculate_dynamic_toe_fast)
+
 
         self.brake_bias = 2.5 # 3.3.8.1. Driving and Braking Constraints in the Patton paper, 1 is even, 2 is 2x in the front
 
@@ -112,6 +203,18 @@ class Car:
             print("Failed to load fast pacejka, using slow pacejka, you should really compile the fast pacejka its like 3x faster")
             self.fast_mf = None
 
+    def update_toe_geometry(self):
+        self.front_toe_roll = np.transpose(self.f_t_r)
+        self.front_toe_roll_fast = np.polyfit(self.front_toe_roll[0], self.front_toe_roll[1], 1)[0]
+        self.front_toe_bump = np.transpose(self.f_t_b)
+        self.front_toe_bump_fast = np.polyfit(self.front_toe_bump[0], self.front_toe_bump[1], 2)
+        self.rear_toe_roll = np.transpose(self.r_t_r)
+        self.rear_toe_roll_fast = np.polyfit(self.rear_toe_roll[0], self.rear_toe_roll[1], 1)[0]
+        self.rear_toe_bump = np.transpose(self.r_t_b)
+        self.rear_toe_bump_fast = np.polyfit(self.rear_toe_bump[0], self.rear_toe_bump[1], 2)
+        self.front_camber_steer = np.transpose(self.r_t_b)
+        self.front_camber_steer_fast = np.polyfit(self.front_camber_steer[0], self.front_camber_steer[1], 2)
+
     def update_car(self):
         self.mu_f = self.mass_unsprung/2 #Front unsprung mass
         self.mu_r = self.mass_unsprung/2
@@ -124,7 +227,9 @@ class Car:
         front_pressure, rear_pressure = self.calculate_brake_pressure(self.pedal_force)
         self.max_front_brake_torque, self.max_rear_brake_torque = self.calculate_brake_torque(front_pressure, rear_pressure)
         self.effective_brake_bias = self.max_front_brake_torque / (self.max_front_brake_torque + self.max_rear_brake_torque)
-        self.max_velocity = np.power((self.power / (0.5 * 1.225 * self.cd)), 1/3)
+        max_v_power = np.power((self.power / (0.5 * 1.225 * self.cd * self.A)), 1/3)
+        max_v_rpm = ( self.max_motor_rate * self.mf_tire.UNLOADED_RADIUSc ) / self.drive_ratio
+        self.max_velocity = min(max_v_power, max_v_rpm)
 
     def find_tractive_force(self, vel, use_aero = True):
         if use_aero:

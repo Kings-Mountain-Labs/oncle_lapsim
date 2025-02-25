@@ -142,3 +142,67 @@ def calculate_curvature(points):
     curvature = (dx_dt * d2y_dt2 - dy_dt * d2x_dt2) / (dx_dt**2 + dy_dt**2)**1.5
 
     return curvature
+
+def interpolate(inputs, outputs, target):
+    # Ensure inputs and outputs are the same length
+    if len(outputs) != len(inputs):
+        raise ValueError("The length of outputs and inputs must be the same.")
+
+    lower_slope = (outputs[1] - outputs[0]) / (inputs[1] - inputs[0])
+    upper_slope = (outputs[-1] - outputs[-2]) / (inputs[-1] - inputs[-2])
+
+    scale = 100 #really dump way to account for out of bounds stuff but I'm not good enough at python and clean_interp method won't work idk why
+    #inputs.insert(0, lower_slope * scale + inputs[0])
+    #inputs.append(upper_slope * scale + inputs[len(inputs) - 1])
+    #outputs.insert(0, lower_slope * scale + outputs[0])
+    #outputs.append(upper_slope * scale + outputs[len(outputs) - 1])
+
+
+    if hasattr(target, "__len__"):
+        targets = []
+        for val in target:
+
+            # Loop through the outputs array to find the segment
+            for i in range(len(inputs) - 1):
+                if inputs[i] <= val <= inputs[i + 1] or inputs[i] >= val >= inputs[i + 1]:
+                    # Perform linear interpolation
+                    x0, x1 = outputs[i], outputs[i + 1]
+                    y0, y1 = inputs[i], inputs[i + 1]
+                    interpolated_output = x0 + (val - y0) * (x1 - x0) / (y1 - y0)
+                    targets.append(interpolated_output) 
+
+            if val < inputs[0]:
+                targets.append(outputs[0] + ( lower_slope * ( val - inputs[0] ) ))
+            elif val > inputs[len(inputs) - 1]:
+                targets.append(outputs[len(outputs) - 1] + ( upper_slope * ( val - inputs[len(inputs) - 1] ) ))
+
+        return targets
+
+    else:
+
+        for i in range(len(inputs) - 1):
+            if inputs[i] <= target <= inputs[i + 1] or inputs[i] >= target >= inputs[i + 1]:
+                # Perform linear interpolation
+                x0, x1 = outputs[i], outputs[i + 1]
+                y0, y1 = inputs[i], inputs[i + 1]
+                interpolated_output = x0 + (target - y0) * (x1 - x0) / (y1 - y0)
+
+                return interpolated_output
+
+        if target < inputs[0]:
+            return outputs[0] + ( lower_slope * ( target - inputs[0] ) )
+        elif target > inputs[len(inputs) - 1]:
+            return outputs[len(outputs) - 1] + ( upper_slope * ( target - inputs[len(inputs) - 1] ) )
+
+    # If target is not in the range of inputs, raise an error
+    raise ValueError("Target outputs is outside the range of provided inputs.")
+
+# slip angle control
+def sa_lut(v):
+    velocities = [5, 6, 7, 8, 10, 13, 15, 20, 25, 30]
+    max_slip = [35, 31, 28, 24, 18, 14.25, 13.25, 12.75, 14, 14]
+
+    velocities = np.array(velocities)
+    max_slip = np.array(max_slip)
+
+    return interpolate(velocities, max_slip, v)
