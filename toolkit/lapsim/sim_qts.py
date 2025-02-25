@@ -116,7 +116,7 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     butter_b, butter_a = butter(butter_order, 1/10.0, 'low', analog=False, fs=1/(dd/2))
 
     count = np.zeros([len_new_dist])
-    last_changed = np.zeros([len_new_dist])
+    last_changed = np.ones([len_new_dist]) * -1
 
     err = []
     begin = time.time()
@@ -129,6 +129,9 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
         # Limit velocities are calculated by starting from critical points and
         # identifying the next velocity based on acceleration limits (LAS of Octahedron)
         for i, ind in enumerate(critc):
+
+            if last_changed[ind] == n:
+                continue
 
             # Working from the front side
 
