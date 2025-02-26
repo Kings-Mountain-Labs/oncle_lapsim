@@ -113,7 +113,7 @@ def sim_qts(car: Car, track: Track, las: LAS, target, flying=False, silent=False
     butter_order = 2
     # the cutoff frequency should be approximately the distance the car travels between 3 cones in a tight slalom in units of 1/m
     # My best guess is that it in the range of 5-10m 
-    butter_b, butter_a = butter(butter_order, 1/10.0, 'low', analog=False, fs=1/(dd/2))
+    butter_b, butter_a = butter(butter_order, 1/15.0, 'low', analog=False, fs=1/(dd/2))
 
     count = np.zeros([len_new_dist])
     last_changed = np.ones([len_new_dist]) * -1
