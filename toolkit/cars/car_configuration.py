@@ -415,7 +415,7 @@ class Car:
     def s_r(self, f_z, s_a, v_avg, fx_target, i_a = 0.0, upper = 0.2, lower = -0.3, og_upper = 0.2, og_lower = -0.3, kappa=0.0, prev_kappa=0.0, prev_fx=0.0, i=0, p: float = 82500, non_driven=False, flip_s_a=False, mu_corr: float = 1.0):
         """
         Solves for the slip ratio of a single tire, also determines if the tire is saturated with Fx
-        To do this, we use a second order taylor series approximation to solve for the slip ratio
+        To do this, we use a second order taylor quadratic approximation to solve for the slip ratio
         """
         if (fx_target > 0 and non_driven): # If the tire is non driven (eg front wheels) and the target Fx is positive (acceleration), then the tire is wont be reacting any torque
             _, actual_fx, _ = self.steady_state_mmd(f_z, s_a, 0.0, v_avg, i_a, 0.0, flip_s_a=flip_s_a, mu=mu_corr, no_long_include=True, p=p)
