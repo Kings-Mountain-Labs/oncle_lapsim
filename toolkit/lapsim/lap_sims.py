@@ -307,8 +307,6 @@ class RunSim():
         row += 1
         fig.add_trace(go.Scattergl(x=b, y=self.lat, mode='lines', name="Lat Acc Sim", legendgroup=f"group1", showlegend=False), row=row, col=1)
         fig.add_trace(self.track.get_channel_go("__acc_y", distance, group=f"group2", legend=False), row=row, col=1)
-        if debug:
-            fig.add_trace(go.Scattergl(x=b, y=(np.interp(b, d, self.track.lat_acc) - self.lat), mode='lines', name="Lat Acc Diff", legendgroup=f"group8", showlegend=False), row=row, col=1)
         if separate_acc:
             fig.update_yaxes(title_text='Acceleration Lat (m/s^2)', range=[-20, 20], row=row, col=1)
             row += 1
@@ -380,26 +378,26 @@ class RunSim():
         color1 = px.colors.qualitative.Light24[0]
         color2 = px.colors.qualitative.Light24[1]
         fig.add_trace(go.Scattergl(x=self.vel, y=self.lat, mode='markers', name="Sim", marker=dict(size=2, color=color1), legendgroup=f"group1", showlegend=False), row=1, col=1)
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.spa, self.track.interp_dist, self.track.vel), y=self.track.lat_acc, mode='markers', name="Real", marker=dict(size=2, color=color2), legendgroup=f"group2", showlegend=False), row=1, col=1)
+        fig.add_trace(self.track.get_channel_go("__acc_y", vel=True, group=f"group2", legend=False), row=1, col=1)
         fig.add_trace(go.Scattergl(x=self.las.vels, y=self.las.aymax[:, 1], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=1, col=1)
         fig.add_trace(go.Scattergl(x=self.las.vels, y=-self.las.aymax[:, 1], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=1, col=1)
         fig.update_yaxes(title_text='Lat Acc (m/s^2)', row=1, col=1)
 
         fig.add_trace(go.Scattergl(x=self.vel, y=self.lon, mode='markers', name="Sim", marker=dict(size=2, color=color1), legendgroup=f"group1", showlegend=False), row=2, col=1)
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.spa, self.track.interp_dist, self.track.vel), y=self.track.long_acc, mode='markers', name="Real", marker=dict(size=2, color=color2), legendgroup=f"group2", showlegend=False), row=2, col=1)
+        fig.add_trace(self.track.get_channel_go("__acc_x", vel=True, group=f"group2", legend=False), row=2, col=1)
         fig.add_trace(go.Scattergl(x=self.las.vels, y=self.las.longAcc_forward[:, 0], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=2, col=1)
         fig.add_trace(go.Scattergl(x=self.las.vels, y=self.las.longAcc_reverse[:, 0], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=2, col=1)
         fig.update_yaxes(title_text='Long Acc (m/s^2)', row=2, col=1)
 
         fig.add_trace(go.Scattergl(x=self.vel, y=self.omega_dot, mode='markers', name="Sim", marker=dict(size=2, color=color1), legendgroup=f"group1", showlegend=False), row=3, col=1)
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.spa, self.track.interp_dist, self.track.vel), y=self.track.get_ch("__yacc"), mode='markers', name="Real", marker=dict(size=2, color=color2), legendgroup=f"group2", showlegend=False), row=3, col=1)
+        fig.add_trace(self.track.get_channel_go("__yacc", vel=True, group=f"group2", legend=False), row=3, col=1)
         if include_yaw_lims:
             fig.add_trace(go.Scattergl(x=self.las.vels, y=self.las.yawmax[:, 2], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=3, col=1)
             fig.add_trace(go.Scattergl(x=self.las.vels, y=-self.las.yawmax[:, 2], mode='markers', name="LAS Lim", marker_color=self.las.vels, legendgroup=f"group3", showlegend=False), row=3, col=1)
         fig.update_yaxes(title_text='Yaw Acc (rad/sec^2)', row=3, col=1)
 
         fig.add_trace(go.Scattergl(x=self.vel, y=self.omega, mode='markers', name="Sim", marker=dict(size=2, color=color1), legendgroup=f"group1", showlegend=False), row=4, col=1)
-        fig.add_trace(go.Scattergl(x=np.interp(self.track.spa, self.track.interp_dist, self.track.vel), y=self.track.y_r, mode='markers', name="Real", marker=dict(size=2, color=color2), legendgroup=f"group2", showlegend=False), row=4, col=1)
+        fig.add_trace(self.track.get_channel_go("__gyro_z", vel=True, group=f"group2", legend=False), row=4, col=1)
         fig.update_yaxes(title_text='Yaw Rate (rad/sec)', row=4, col=1)
 
         fig.update_xaxes(title_text='Vel (m/s)', row=4, col=1)
