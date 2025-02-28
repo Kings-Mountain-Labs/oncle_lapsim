@@ -245,8 +245,8 @@ class Multi_Layer_LAS(LAS):
         # beta_ay, delta_ay, beta_yaw, delta_yaw = 0, 0, 0, 0
         for i, long_g in enumerate(self.long_acc_layers[ind]):
             beta_ay, delta_ay, beta_yaw, delta_yaw = 0, -5, 0, 0
-            delta_ay, beta_ay, aymax_ay, yawmax_ay, ax_ay, itt_ay, vp_ay, _, _ = self.find_limit(car, v_avg, long_g, lat_loss_func, delta_lim=30.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_ay, d_guess=delta_ay)
-            delta_yaw, beta_yaw, aymax_yaw, yawmax_yaw, ax_yaw, itt_yaw, vp_yaw, _, _ = self.find_limit(car, v_avg, long_g, yaw_loss_func, delta_lim=30.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_yaw, d_guess=delta_yaw)
+            delta_ay, beta_ay, aymax_ay, yawmax_ay, ax_ay, itt_ay, vp_ay, _, _ = self.find_limit(car, v_avg, long_g, lat_loss_func, delta_lim=120.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_ay, d_guess=delta_ay)
+            delta_yaw, beta_yaw, aymax_yaw, yawmax_yaw, ax_yaw, itt_yaw, vp_yaw, _, _ = self.find_limit(car, v_avg, long_g, yaw_loss_func, delta_lim=120.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_yaw, d_guess=delta_yaw)
 
         
             if car.debug:
