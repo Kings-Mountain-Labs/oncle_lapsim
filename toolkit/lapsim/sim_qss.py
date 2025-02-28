@@ -108,6 +108,8 @@ def sim_qss(car: Car, track: Track, las: LAS, target, flying=False, silent=False
         # identifying the next velocity based on acceleration limits (LAS of Octahedron)
         for i, ind in enumerate(critc):
             # Working from the front side
+            if last_changed[ind] == n:
+                continue
 
             j, k, ind = check_ind(1, 0, ind, len_new_dist, True)
             floor = False

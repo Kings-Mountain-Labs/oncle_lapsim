@@ -87,6 +87,13 @@ class Track:
             return self.channels['__gps_vel'].data
         else:
             return np.zeros(1)
+        
+    @property
+    def vel_time(self):
+        if '__gps_vel' in self.channels.keys():
+            return self.channels['__gps_vel'].time
+        else:
+            return np.zeros(1)
 
     def make_k_prime(self):
         # Derivative of Curvature
@@ -98,12 +105,14 @@ class Track:
     def get_ch_dist(self, name) -> np.ndarray:
         return np.interp(self.channels[name].time, self.smooth_gps.raw_time, self.u)
 
-    def get_channel(self, name, distance=False, datum=True) -> tuple[np.ndarray, np.ndarray]:
+    def get_channel(self, name, distance=False, vel=False, datum=True) -> tuple[np.ndarray, np.ndarray]:
         if not name in self.channels.keys():
             print(f"Channel {name} not found in track")
             return np.array([0]), np.array([0]), "unknown"
         if distance:
             return np.interp(self.channels[name].time, self.smooth_gps.raw_time, self.u), self.channels[name].data, self.channels[name].short_name
+        elif vel:
+            return np.interp(self.channels[name].time, self.vel_time, self.vel), self.channels[name].data, self.channels[name].short_name
         else:
             if datum:
                 return self.channels[name].time - self.gps.laptime_datum, self.channels[name].data, self.channels[name].short_name
@@ -117,8 +126,8 @@ class Track:
         else:
             return self.channels[name].data
 
-    def get_channel_go(self, name, distance=False, group: str = None, legend: bool = True) -> go.Scattergl:
-        time, data, p_name = self.get_channel(name, distance)
+    def get_channel_go(self, name, distance=False, vel=False, group: str = None, legend: bool = True) -> go.Scattergl:
+        time, data, p_name = self.get_channel(name, distance, vel)
         if group is None:
             return go.Scattergl(x=time, y=data, mode='lines', name=p_name, showlegend=legend)
         else:
