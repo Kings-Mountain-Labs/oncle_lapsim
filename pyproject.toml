@@ -7,6 +7,7 @@ dependencies = [
     "csaps>=1.2.0",
     "ipykernel>=6.29.5",
     "ipywidgets>=8.1.5",
+    "jax>=0.5.1",
     "llvmlite>=0.44.0",
     "matplotlib>=3.10.0",
     "maturin>=1.8.2",
