@@ -45,6 +45,21 @@ wheels = [
 ]
 
 [[package]]
+name = "bayesian-optimization"
+version = "2.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7f/1b/6cc2c43dffd16f0b924c905726e602855fae5856ab4f81fd8c68bbfee51e/bayesian_optimization-2.0.3.tar.gz", hash = "sha256:2fd4bff8b2e5dda2d658ab66b57a2f39e6dc2c36ba5489878e45499c732cdf44", size = 29244 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/d2/e9c7bc264eb2e59cbc1bfd6c66f053824fb87d630f07a1657bd63415ad2a/bayesian_optimization-2.0.3-py3-none-any.whl", hash = "sha256:73d08237c46a1787c17333aeaae3e41c5fab8e58a68d979645b70e72ba22b63d", size = 31309 },
+]
+
+[[package]]
 name = "cffi"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
@@ -800,6 +815,7 @@ name = "oncle-lapsim"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "bayesian-optimization" },
     { name = "csaps" },
     { name = "ipykernel" },
     { name = "ipywidgets" },
@@ -834,6 +850,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bayesian-optimization", specifier = ">=2.0.3" },
     { name = "csaps", specifier = ">=1.2.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "ipywidgets", specifier = ">=8.1.5" },

@@ -3,6 +3,7 @@ name = "Oncle-LapSim"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
+    "bayesian-optimization>=2.0.3",
     "csaps>=1.2.0",
     "ipykernel>=6.29.5",
     "ipywidgets>=8.1.5",
