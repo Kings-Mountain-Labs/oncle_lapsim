@@ -395,7 +395,7 @@ def split_run_fit_ml(run_data, out, fig_title):
     fig.update_layout(template="plotly_dark", title_text=f"{fig_title} {v_mean}kph {p_mean} kPa, {sr_mean}SR")
     fig.show()
 
-def parameter_estimation_function(x1, run, tk: TireMFModel, params_list, error_list, loss, mask: ArrayLike, ts: bool = False):
+def parameter_estimation_function(x1, run, tk: MFModel, params_list, error_list, loss, mask: ArrayLike, ts: bool = False):
 
     x0 = tk.dump_params()
     x0[mask] = x1

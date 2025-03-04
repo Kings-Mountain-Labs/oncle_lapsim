@@ -1,93 +1,24 @@
 import numpy as np
-from .tire_model_utils import VarInf, PostProInputs, Mode, ForceMoments, Result, RetValue, InputRanges, dump_tk
+from .tire_model_utils import MODEL_DEFAULTS, VarInf, PostProInputs, Mode, ForceMoments, set_x, Result, RetValue, InputRanges
 from toolkit.common import safe_sign, interpolate
 from .pacejka_coefficients import PacejkaModel
+import torch
+                        
+def tire_model_from_arr(arr):
+    tm = DiffMFModel(MODEL_DEFAULTS)
+    set_x(arr, tm)
+    return tm
 
-class MFModel(PacejkaModel):
-    # TireMFModel Solver for Magic Formula 5.2, 6.1 and 6.2 Tyre Models
+
+class DiffMFModel(PacejkaModel, torch.nn.Module):
+    # DiffMFModel Solver for Magic Formula 5.2, 6.1 and 6.2 Tyre Models
     def __init__(self, tire_coefficients: dict) -> None:
         # Parameters not specified in the TIR file
         # Used to avoid low speed singularity
         self.epsilon = 1e-6  # [Eqn (4.E6a) Page 178 - Book]
         super().__init__(tire_coefficients)
-
-    def fullSteadyState(self, inputs, use_turnslip=False):
-
-        userDynamics = 0  # Solve in steady state mode
-
-        Fz = inputs[:, 0]       # vertical load         (N)
-        kappa = inputs[:, 1]    # longitudinal slip     (-) (-1 = locked wheel)
-        alpha = inputs[:, 2]    # side slip angle       (radians)
-        gamma = inputs[:, 3]    # inclination angle     (radians)
-        phit = inputs[:, 4]     # turn slip             (1/m)
-        Vcx = inputs[:, 5]      # forward velocity      (m/s)
-        p = inputs[:, 6]        # pressure              (Pa)
-        omega = inputs[:, 7]    # wheel speed           (rad/s)
-
-        # Call parseInputs
-        postProInputs, reductionSmooth, modes = self.parseInputs(userDynamics, Fz, kappa, alpha, gamma, phit, Vcx, p, omega, useTurnSlip=use_turnslip)
-
-        # Call doForcesAndMoments
-        forces_and_moments, varinf = self.doForcesAndMoments(postProInputs, reductionSmooth, modes)
-
-        # Call doExtras
-        Re, omega_out, rho, Rl, a, b, Cx, Cy, Cz, sigmax, sigmay, instKya = self.doExtras(postProInputs, forces_and_moments, varinf)
-
-        # Check the sign of the coefficient of friction
-        # The calculation of Fy is not affected by the sign of muy
-        if modes.useLimitsCheck:
-            if np.any(varinf.muy < 0):
-                print('Negative lateral coefficient of friction forced to be positive')
-        varinf.muy = np.abs(varinf.muy)
-
-        # Preallocate out variable
-        out = np.zeros((inputs.shape[0], 32))
-
-        # Pack all the outputs
-        out[:, 0] = np.real(forces_and_moments.Fx)
-        out[:, 1] = np.real(forces_and_moments.Fy)
-        out[:, 2] = np.real(postProInputs.uFz)
-        out[:, 3] = np.real(forces_and_moments.Mx)
-        out[:, 4] = np.real(forces_and_moments.My)
-        out[:, 5] = np.real(forces_and_moments.Mz)
-        out[:, 6] = np.real(postProInputs.ukappaLow)
-        out[:, 7] = np.real(postProInputs.ualpha)
-        out[:, 8] = np.real(postProInputs.ugamma)
-        out[:, 9] = np.real(postProInputs.phit)
-        out[:, 10] = np.real(postProInputs.uVcx)
-        out[:, 11] = np.real(postProInputs.p)
-        out[:, 12] = np.real(Re)
-        out[:, 13] = np.real(rho)
-        out[:, 14] = np.real(2*a)
-        out[:, 15] = np.real(varinf.t)
-        out[:, 16] = np.real(varinf.mux)
-        out[:, 17] = np.real(varinf.muy)
-        out[:, 18] = np.real(omega_out)
-        out[:, 19] = np.real(Rl)
-        out[:, 20] = np.real(2*b)
-        out[:, 21] = np.real(varinf.Mzr)
-        out[:, 22] = np.real(Cx)
-        out[:, 23] = np.real(Cy)
-        out[:, 24] = np.real(Cz)
-        out[:, 25] = np.real(varinf.Kya)
-        out[:, 26] = np.real(sigmax)
-        out[:, 27] = np.real(sigmay)
-        out[:, 28] = np.real(instKya)
-        out[:, 29] = np.real(varinf.Kxk)
-        out[:, 30] = np.real(forces_and_moments.dFz)
-        out[:, 31] = np.real(postProInputs.phi)
-
-        return out
-
-    def steady_state(self, Fz, kappa, alpha, gamma, phit, Vcx, p, omega):
-
-        userDynamics = 0  # Solve in steady state mode
-
-        postProInputs, reductionSmooth, modes = self.parseInputs(userDynamics, Fz, kappa, alpha, gamma, phit, Vcx, p, omega)
-
-        forces_and_moments, varinf = self.doForcesAndMoments(postProInputs, reductionSmooth, modes)
-
-        return np.real(forces_and_moments.Fx), np.real(forces_and_moments.Fy), np.real(forces_and_moments.Mx), np.real(forces_and_moments.Mz)
+        torch.nn.Module.__init__(self)
+    
 
     def steady_state_mmd(self, f_z: float, s_a: float, s_r: float, p: float = 82500, i_a: float = 0, v: float = 15, omega: float = 0.0, mu_corr: float = 1.0, flip_s_a: bool = False):
         if flip_s_a:
@@ -98,31 +29,6 @@ class MFModel(PacejkaModel):
         if flip_s_a:
             return Fx.real * mu_corr, -Fy.real * mu_corr, -Mz.real * mu_corr
         return Fx.real * mu_corr, Fy.real * mu_corr, Mz.real * mu_corr
-
-    def s_r_sweep(self, f_z: float, s_a: float, s_r, p: float = 82500, i_a: float = 0, v: float = 15, mu_corr: float = 1.0, flip_s_a: bool = False):
-        exp_len = len(s_r)
-        if flip_s_a:
-            s_a = -s_a
-        postProInputs, reductionSmooth, modes = self.fast_parse_inputs(0, f_z, s_r, s_a, i_a, 0.0, v, p, 0.0, ncolumns=exp_len)
-
-        Fx, Fy, Mz = self.do_forces_and_moments_fast(postProInputs, reductionSmooth, modes)
-        if flip_s_a:
-            return Fx.real * mu_corr, -Fy.real * mu_corr, -Mz.real * mu_corr
-        return Fx.real * mu_corr, Fy.real * mu_corr, Mz.real * mu_corr
-
-    def s_a_sweep(self, f_z: float, s_a, s_r, p: float = 82500, i_a: float = 0, v: float = 15, mu_corr: float = 1.0, flip_s_a: bool = False):
-        exp_len = len(s_r)
-        if flip_s_a:
-            s_a = -s_a
-        postProInputs, reductionSmooth, modes = self.fast_parse_inputs(0, f_z, s_r, s_a, i_a, 0.0, v, p, 0.0, ncolumns=exp_len)
-
-        Fx, Fy, Mz = self.do_forces_and_moments_fast(postProInputs, reductionSmooth, modes)
-        if flip_s_a:
-            return Fx.real * mu_corr, -Fy.real * mu_corr, -Mz.real * mu_corr
-        return Fx.real * mu_corr, Fy.real * mu_corr, Mz.real * mu_corr
-
-    def dump_params(self):
-        return dump_tk(self)
 
     def parseInputs(self, userDynamics, Fz, kappa, alpha, gamma, phit, Vcx, p, omega, useLimitsCheck=False, useAlphaStar=False, useTurnSlip=False):
         ncolumns = len(Fz)
@@ -385,7 +291,7 @@ class MFModel(PacejkaModel):
 
         return post_pro_inputs, reductionSmooth, modes
 
-    def calculateBasic(self, modes, postProInputs):
+    def calculate_basic(self, modes, postProInputs):
         # Velocities in point S (slip point)
         # [Eqn (4.E5) Page 181 - Book]
         Vsx = -postProInputs.kappa * np.abs(postProInputs.uVcx)
@@ -450,7 +356,7 @@ class MFModel(PacejkaModel):
 
         return alpha_star, gamma_star, LMUX_star, LMUY_star, Fz0_prime, alpha_prime, LMUX_prime, LMUY_prime, dfz, dpi
 
-    def calculateFx0(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, LMUX_star, LMUX_prime, dfz, dpi):
+    def calculate_fx0(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, LMUX_star, LMUX_prime, dfz, dpi):
         Fz, kappa, gamma, Vx = postProInputs.Fz, postProInputs.kappa, postProInputs.gamma, postProInputs.uVcx
 
         if modes.useTurnSlip:
@@ -509,7 +415,7 @@ class MFModel(PacejkaModel):
 
         return Fx0, mux, Kxk
 
-    def calculateFy0(self, postProInputs: PostProInputs, modes: Mode, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi):
+    def calculate_fy0(self, postProInputs: PostProInputs, modes: Mode, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi):
         # Turn slip
         if modes.useTurnSlip:
             r_0 = self.UNLOADED_RADIUS  # Free tyre radius
@@ -619,7 +525,7 @@ class MFModel(PacejkaModel):
 
         return Fy0, muy, Kya, Kyg0, SHy, SVy, By, Cy, zeta2
 
-    def calculateMz0(self, postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2):
+    def calculate_mz0(self, postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2):
         if modes.useLimitsCheck:
             Fz = postProInputs.Fz_lowLimit
             # Set Fz to zero if the input is negative
@@ -694,7 +600,7 @@ class MFModel(PacejkaModel):
         postProInputs_sub0 = postProInputs
         postProInputs_sub0.gamma = 0.0
 
-        Fyo_sub0, _, _, _, _, _, _, _, _ = self.calculateFy0(postProInputs_sub0, modes_sub0, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
+        Fyo_sub0, _, _, _, _, _, _, _, _ = self.calculate_fy0(postProInputs_sub0, modes_sub0, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
 
         Mzo_prime = -t0 * Fyo_sub0  # gamma=phi=0 (4.E32)
 
@@ -704,7 +610,7 @@ class MFModel(PacejkaModel):
             # [Eqn (4.102) Page 188 - Book]
             zeta6 = np.cos(np.arctan(self.QBRP1 * r_0 * postProInputs.phi))
 
-            Fy0, muy, _, _, _, _, _, _, _ = self.calculateFy0(postProInputs, modes, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
+            Fy0, muy, _, _, _, _, _, _, _ = self.calculate_fy0(postProInputs, modes, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
 
             Mzp_inf = self.QCRP1 * np.abs(muy) * r_0 * Fz * np.sqrt(Fz / Fz0_prime) * self.LMP  # [Eqn (4.95) Page 187 - Book]
 
@@ -720,7 +626,7 @@ class MFModel(PacejkaModel):
             # Eqn from the manual
             Drp = DDrp * np.sin(CDrp * np.arctan(BDrp * r_0 * postProInputs.phit))
 
-            _, Gyk, _ = self.calculateFy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
+            _, Gyk, _ = self.calculate_fy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
 
             Mzp90 = Mzp_inf * (2 / np.pi) * np.arctan(self.QCRP2 * r_0 * np.abs(postProInputs.phit)) * Gyk  # [Eqn (4.103) Page 188 - Book]
 
@@ -741,7 +647,7 @@ class MFModel(PacejkaModel):
 
         return Mz0, alphar, alphat, Dr, Cr, Br, Dt, Ct, Bt, Et, Kya_prime
 
-    def calculateFx(self, postProInputs: PostProInputs, modes: Mode, alpha_star, gamma_star, dfz, Fx0):
+    def calculate_fx(self, postProInputs: PostProInputs, modes: Mode, alpha_star, gamma_star, dfz, Fx0):
         Cxa = self.RCX1  # (4.E55)
         Exa = self.REX1 + self.REX2 * dfz  # (<= 1) (4.E56)
 
@@ -765,7 +671,7 @@ class MFModel(PacejkaModel):
 
         return Fx
 
-    def calculateFy(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, alpha_star, gamma_star, dfz, Fy0, muy, zeta2):
+    def calculate_fy(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, alpha_star, gamma_star, dfz, Fy0, muy, zeta2):
         DVyk = muy * postProInputs.Fz * (self.RVY1 + self.RVY2 * dfz + self.RVY3 * gamma_star) * np.cos(np.arctan(self.RVY4 * alpha_star)) * zeta2  # (4.E67)
         SVyk = DVyk * np.sin(self.RVY5 * np.arctan(self.RVY6 * postProInputs.kappa)) * self.LVYKA  # (4.E66)
         SHyk = self.RHY1 + self.RHY2 * dfz  # (4.E65)
@@ -844,7 +750,7 @@ class MFModel(PacejkaModel):
 
         return Mx
 
-    def calculateMy(self, postProInputs: PostProInputs, Fx):
+    def calculate_my(self, postProInputs: PostProInputs, Fx):
         Fz_unlimited, Vcx, kappa, gamma, p = postProInputs.uFz, postProInputs.uVcx, postProInputs.ukappa, postProInputs.gamma, postProInputs.p
 
         # Empirically discovered:
@@ -913,7 +819,7 @@ class MFModel(PacejkaModel):
         
         return My
 
-    def calculateMz(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2):
+    def calculate_mz(self, postProInputs: PostProInputs, reductionSmooth, modes: Mode, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2):
         kappa, gamma = postProInputs.kappa, postProInputs.gamma
 
         # alphar_eq = sqrt(alphar**2+(Kxk / Kya_prime)**2 * kappa**2) * sign(alphar) # (4.E78)
@@ -938,11 +844,11 @@ class MFModel(PacejkaModel):
         postProInputs_sub0.gamma = 0.0
 
         # Evaluate Fy0 with gamma = 0 and phit  = 0
-        Fy0_sub0, muy_sub0, _, _, _, _, _, _, _ = self.calculateFy0(postProInputs_sub0, modes, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
+        Fy0_sub0, muy_sub0, _, _, _, _, _, _, _ = self.calculate_fy0(postProInputs_sub0, modes, reductionSmooth, alpha_star, 0.0, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
 
         # Evaluate Gyk with phit = 0 (Note: needs to take gamma into
         # account to match TNO)
-        _, Gyk_sub0, _ = self.calculateFy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0_sub0, muy_sub0, zeta2)
+        _, Gyk_sub0, _ = self.calculate_fy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0_sub0, muy_sub0, zeta2)
 
         # Note: in the above equation starVar is used instead of
         # starVar_sub0 because it was found a better match with TNO
@@ -970,23 +876,23 @@ class MFModel(PacejkaModel):
 
     def doForcesAndMoments(self, postProInputs, reductionSmooth, modes):
 
-        alpha_star, gamma_star, LMUX_star, LMUY_star, Fz0_prime, alpha_prime, LMUX_prime, LMUY_prime, dfz, dpi = self.calculateBasic(modes, postProInputs)
+        alpha_star, gamma_star, LMUX_star, LMUY_star, Fz0_prime, alpha_prime, LMUX_prime, LMUY_prime, dfz, dpi = self.calculate_basic(modes, postProInputs)
 
-        Fx0, mux, Kxk = self.calculateFx0(postProInputs, reductionSmooth, modes, LMUX_star, LMUX_prime, dfz, dpi)
+        Fx0, mux, Kxk = self.calculate_fx0(postProInputs, reductionSmooth, modes, LMUX_star, LMUX_prime, dfz, dpi)
 
-        Fy0, muy, Kya, _, SHy, SVy, By, Cy, zeta2 = self.calculateFy0(postProInputs, modes, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
+        Fy0, muy, Kya, _, SHy, SVy, By, Cy, zeta2 = self.calculate_fy0(postProInputs, modes, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
 
-        _, alphar, alphat, Dr, Cr, Br, Dt, Ct, Bt, Et, Kya_prime = self.calculateMz0(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2)
+        _, alphar, alphat, Dr, Cr, Br, Dt, Ct, Bt, Et, Kya_prime = self.calculate_mz0(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2)
 
-        Fx = self.calculateFx(postProInputs, modes, alpha_star, gamma_star, dfz, Fx0)
+        Fx = self.calculate_fx(postProInputs, modes, alpha_star, gamma_star, dfz, Fx0)
 
-        Fy, _, SVyk = self.calculateFy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
+        Fy, _, SVyk = self.calculate_fy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
 
         Mx = self.calculateMx(postProInputs, dpi, Fy)
 
-        My = self.calculateMy(postProInputs, Fx)
+        My = self.calculate_my(postProInputs, Fx)
 
-        Mz, t, Mzr = self.calculateMz(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2)
+        Mz, t, Mzr = self.calculate_mz(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2)
 
         forces_and_moments = ForceMoments()
         forces_and_moments.Fx = Fx
@@ -1009,24 +915,24 @@ class MFModel(PacejkaModel):
 
     def do_forces_and_moments_fast(self, postProInputs, reductionSmooth, modes):
 
-        alpha_star, gamma_star, LMUX_star, LMUY_star, Fz0_prime, alpha_prime, LMUX_prime, LMUY_prime, dfz, dpi = self.calculateBasic(modes, postProInputs)
+        alpha_star, gamma_star, LMUX_star, LMUY_star, Fz0_prime, alpha_prime, LMUX_prime, LMUY_prime, dfz, dpi = self.calculate_basic(modes, postProInputs)
 
-        Fx0, _, Kxk = self.calculateFx0(postProInputs, reductionSmooth, modes, LMUX_star, LMUX_prime, dfz, dpi)
+        Fx0, _, Kxk = self.calculate_fx0(postProInputs, reductionSmooth, modes, LMUX_star, LMUX_prime, dfz, dpi)
 
-        Fy0, muy, Kya, _, SHy, SVy, By, Cy, zeta2 = self.calculateFy0(postProInputs, modes, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
+        Fy0, muy, Kya, _, SHy, SVy, By, Cy, zeta2 = self.calculate_fy0(postProInputs, modes, reductionSmooth, alpha_star, gamma_star, LMUY_star, Fz0_prime, LMUY_prime, dfz, dpi)
 
-        _, alphar, alphat, Dr, Cr, Br, Dt, Ct, Bt, Et, Kya_prime = self.calculateMz0(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2)
+        _, alphar, alphat, Dr, Cr, Br, Dt, Ct, Bt, Et, Kya_prime = self.calculate_mz0(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, Kya, SHy, SVy, By, Cy, zeta2)
 
-        Fx = self.calculateFx(postProInputs, modes, alpha_star, gamma_star, dfz, Fx0)
+        Fx = self.calculate_fx(postProInputs, modes, alpha_star, gamma_star, dfz, Fx0)
 
-        Fy, _, SVyk = self.calculateFy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
+        Fy, _, SVyk = self.calculate_fy(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, dfz, Fy0, muy, zeta2)
 
-        Mz, _, _ = self.calculateMz(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2)
+        Mz, _, _ = self.calculate_mz(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2)
 
         return Fx, Fy, Mz
 
 
-    def calculateRe(self, postProInputs: PostProInputs, dpi):
+    def calculate_re(self, postProInputs: PostProInputs, dpi):
         Vcx = postProInputs.uVcx
         Fz_unlimited = postProInputs.uFz
         kappa_unlimited = postProInputs.ukappa
@@ -1326,7 +1232,7 @@ class MFModel(PacejkaModel):
 
         dpi = (postProInputs.p - self.NOMPRES) / self.NOMPRES  # [Eqn (4.E2b) Page 177 - Book]
 
-        Re, Romega, omega = self.calculateRe(postProInputs, dpi)
+        Re, Romega, omega = self.calculate_re(postProInputs, dpi)
 
         rho, Rl, Cz = self.calculateRhoRl(postProInputs, forces_and_moments, dpi, omega, Romega)
 

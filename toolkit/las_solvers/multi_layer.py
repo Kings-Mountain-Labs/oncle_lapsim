@@ -1,13 +1,13 @@
 from .las import LAS
 import numpy as np
-from toolkit.cars.car_configuration import Car
+from toolkit.cars import Car
 # from numba import njit
 from toolkit.common.constants import *
 import time
 from typing import List
 from .loss_funcs import lat_loss_func, yaw_loss_func
 import plotly.graph_objs as go
-from toolkit.common.maths import skew, is_point_in_triangle, db_for_point_in_triangle
+from toolkit.common import skew, is_point_in_triangle, db_for_point_in_triangle
 
 # @njit
 def calc_vel(c_0, c_1, c_2, v_min = 0.1):

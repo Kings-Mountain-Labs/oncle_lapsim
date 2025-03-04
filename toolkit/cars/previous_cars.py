@@ -1,4 +1,4 @@
-from toolkit.cars.car_configuration import Car
+from .car_configuration import Car
 from toolkit.common.constants import *
 
 def sr_9():

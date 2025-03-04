@@ -1,9 +1,9 @@
 import numpy as np
-from toolkit.cars.car_configuration import Car
+from toolkit.cars import Car
 from toolkit.steady_state_solver import Steady_State_Solver, Iterative_Solver
 from scipy.optimize import minimize
 from toolkit.common.constants import G
-from toolkit.common.maths import powspace
+from toolkit.common import powspace
 from abc import ABC, abstractmethod
 import plotly.graph_objs as go
 

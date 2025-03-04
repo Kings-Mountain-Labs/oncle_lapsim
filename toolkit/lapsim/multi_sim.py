@@ -1,8 +1,8 @@
-from sim_qss import sim_qss
-from toolkit.cars.car_configuration import Car
+from .sim_qss import sim_qss
+from toolkit.cars import Car
 from toolkit.lap.track import *
 import numpy as np
-from sim_qts import sim_qts
+from .sim_qts import sim_qts
 import plotly.graph_objects as go
 import time
 from plotly.subplots import make_subplots

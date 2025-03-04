@@ -1,7 +1,6 @@
 use pyo3::prelude::*;
 mod magic_formula;
 mod structs;
-use bincode::{deserialize, serialize};
 use magic_formula::*;
 use numpy::ndarray::{Array, Array1};
 use numpy::IntoPyArray;

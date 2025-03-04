@@ -94,6 +94,11 @@ def clean_interp(x, xp, fp):
     return ret_val
     
 
+def interpolate(xo, yo, x1, y1, x):
+    # INTERPOLATE Interpolate between two points.
+    y = (yo * (x1 - x) + y1 * (x - xo)) / (x1 - xo)
+    return y
+
 def powspace(start, stop, power, num):
     start = np.power(start, 1/float(power))
     stop = np.power(stop, 1/float(power))
@@ -110,6 +115,15 @@ def vel_at_tire(v, omega, beta, x, y):
     v_y = v * np.sin(beta) - omega * x
     v_v = np.sqrt(v_x**2 + v_y**2)
     return v_v
+
+def safe_sign(arr):
+    if type(arr) != np.ndarray: # Zero Fz correction
+        if arr >= 0:
+            return 1.0
+        return -1.0
+    sign = np.sign(arr)
+    sign[sign == 0] = 1
+    return sign
 
 UP = np.deg2rad(15)
 def clip(x, up=UP):

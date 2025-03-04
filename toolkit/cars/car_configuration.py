@@ -1,12 +1,10 @@
 import numpy as np
-from toolkit.tire_model.tire_model_utils import H_R20_18X6_7
-from toolkit.tire_model.tire_model_pacejka_2010 import tire_model_from_arr
+from toolkit.tire_model import H_R20_18X6_7, tire_model_from_arr, get_rs_pacejka
 import plotly.graph_objs as go
 import time
 from toolkit.common.constants import *
-from toolkit.tire_model.fast_pacejka import get_rs_pacejka
 from scipy.optimize import minimize, OptimizeResult
-from toolkit.common.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
+from toolkit.common import vel_at_tire, clip, to_vel_frame, to_car_frame
 
 def loss_func_two(bd, car, ay_targ, vel, mu_corr, sr_lim):
     ay, yaw, ax, bruh = car.solve_for_yaw(ay_targ, vel, bd[0], bd[1], mu_corr, sr_lim=sr_lim)

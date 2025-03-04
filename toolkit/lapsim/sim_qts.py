@@ -1,10 +1,10 @@
-from toolkit.cars.car_configuration import Car
+from toolkit.cars import Car
 from toolkit.lap.track import Track
 import numpy as np
 import time
 # from numba import njit
 from toolkit.common.constants import *
-from toolkit.las_solvers.las import LAS
+from toolkit.las_solvers import LAS
 from scipy.signal import butter, filtfilt
 
 # @njit

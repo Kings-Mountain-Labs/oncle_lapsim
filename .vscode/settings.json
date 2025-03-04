@@ -23,6 +23,7 @@
         "ndarray",
         "ndimage",
         "oncle",
+        "pacejka",
         "pymap",
         "Scattergl",
         "xaxes",

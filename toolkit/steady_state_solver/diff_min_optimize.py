@@ -2,12 +2,13 @@ import numpy as np
 from toolkit.cars import Car
 from .sss import Steady_State_Solver
 from toolkit.common import to_vel_frame, clip, to_car_frame
-from scipy.optimize import least_squares
+from scipy.optimize import minimize
 
 
 @np.vectorize
-def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
+def car_state_func(car: Car,ay_targ, lfx, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
     # get ax initial by converting long_g to ax
+    # print(f"{lfx:5.10f}")
     if v_avg <= 0.0:
         print("v_avg is 0")
         v_avg = 0.01
@@ -15,6 +16,7 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
     if ax_i == 0.0:
         ax_i = 1e-9
     omega = ay_i / v_avg #Initial yaw rate [rad/s]
+
     fzfl, fzfr, fzrl, fzrr, _, _ = car.find_contact_patch_loads(long_g=ax_i, lat_g=ay_i, vel=v_avg)
     delta_fl, delta_fr, delta_rl, delta_rr = car.calculate_tire_delta_angle(delta_x, 0.0, 0.0, 0.0)
     [safl, safr, sarl, sarr] = car.calculate_slip_angles(v_avg, omega, beta_x, delta_fl, delta_fr, delta_rl, delta_rr)
@@ -28,7 +30,7 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
         fx_r = min(lfx, max_tractive_force)
         fx_f = 0
         kappax_fl, kappax_fr = 0.0, 0.0
-
+    
     kappax_fl, kappax_fr = min(kappax_fl, 0.0), min(kappax_fr, 0.0)
     kappax_rl, kappax_rr, bam_r = car.s_r_ind(fzrl, clip(sarl), ia_rl, v_rl, fzrr, clip(sarr), ia_rr, v_rr, fx_r, mu_corr=mu_corr)
     
@@ -56,24 +58,24 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
     omega = ay_v / v_avg
     long_error = abs(long_g - ax_v)
     ay_error = abs(ay_v - ay_targ)
-    print(f"{ay_i} {ay_it} {ay_v} {ay_targ} {ay_error}\n{ax_i} {ax_it} {ax_v} {long_g} {long_error}\n{beta_x} {delta_x} {v_avg} {omega}")
-    # print(f"{ay_v:.4f} {ay_error:.4f} {long_error:.4f}")
+
+    # long_error = abs(long_g - ax_it)
+    # ay_error = abs(ay_it - ay_targ)
     return ay_v, cn_it, yaw_it, ax_v, long_error, ay_error
 
 
 def backup_loss_func(x, car: Car, v_avg, ax_targ, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force):
     ay_targ, lfx = x
     ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_targ, lfx, car, v_avg, ax_targ, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-    # print(f"{ay_error:.4f} {long_error:.4f}")
-    return [ay_error, long_error]
+    return ay_error + long_error**2
 
-class LS_Solver(Steady_State_Solver):
+class Min_Solver(Steady_State_Solver):
     def __init__(self):
         super().__init__()
-        self.set_solver = "Least_Squares"
+        self.set_solver = "Minimization"
 
     def solve_for_long(self, car: Car, v_avg, long_g, delta_x = 0, beta_x = 0, mu_corr: float = 1.0, ay_it = None, use_drag = False, long_err = 0.01, lat_err = 0.01, zeros = True, use_torque_lim=False, use_break_lim=True):
-        yaw_it, cn_it = 1e-4, 1e-4
+        yaw_it, cn_it = 1e-9, 1e-9
         drag = 0
         if use_break_lim:
             max_f, max_r = car.max_front_brake_torque / -car.mf_tire.UNLOADED_RADIUS, car.max_rear_brake_torque / -car.mf_tire.UNLOADED_RADIUS
@@ -81,19 +83,21 @@ class LS_Solver(Steady_State_Solver):
             max_f, max_r = -1e5, -1e5
 
         if use_torque_lim: # at the moment i dont think there should be a torque limit for acceleration when creating the LAS
-            max_tractive_force = car.find_tractive_force(vel=v_avg, use_aero=use_drag)
+            max_tractive_force = car.find_tractive_force(vel=v_avg, use_aero=False)
         else:
             max_tractive_force = 1e4
         if use_drag:
             drag = 0.5 * 1.225 * v_avg**2 * car.cd * car.A
-        print(f"Vel: {v_avg}")
+        # print(f"{beta_x:.2f} {delta_x:.2f} {v_avg:.2f} {long_g:.2f}")
         args = (car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-        res = least_squares(backup_loss_func, [1e-1, 1e-1], args=args, bounds=((-30, 2*(max_f + max_r) - drag),(30, max_tractive_force)), method="trf", max_nfev=20, ftol=1e-3, loss="linear", verbose=0)
+        res = minimize(backup_loss_func, [4.0, 200], args=args, bounds=((-30, 30),(2*(max_f + max_r) - drag, max_tractive_force)), method="Nelder-Mead", options=dict(disp=False), tol=1e-9)
         ay_it, lfx = res.x
+        # print(f"{ay_it:.4f} {lfx:.4f} {(2*(max_f + max_r) - drag, max_tractive_force)}")
         bruh = res.nfev
         ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_it, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
 
         if (long_error > long_err or ay_error > lat_err): # ay_error > lat_err:#
+            # print(f"long error: {long_error:.4f}, ay error: {ay_error:.4f}")
             if zeros:
                 return 0.0, 0.0, 0.0, 0.0, bruh, True
             else:
