@@ -2,7 +2,7 @@ import numpy as np
 from toolkit.cars.car_configuration import Car
 from .sss import Steady_State_Solver
 from toolkit.common.maths import to_vel_frame, clip, to_car_frame
-from scipy.optimize import least_squares, minimize
+from scipy.optimize import minimize
 
 
 @np.vectorize
@@ -13,7 +13,7 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
         print("v_avg is 0")
         v_avg = 0.01
     ax_i, ay_i = to_car_frame(long_g, ay_targ, beta_x)
-    if ax_i is 0.0:
+    if ax_i == 0.0:
         ax_i = 1e-9
     omega = ay_i / v_avg #Initial yaw rate [rad/s]
 
@@ -90,14 +90,14 @@ class Min_Solver(Steady_State_Solver):
             drag = 0.5 * 1.225 * v_avg**2 * car.cd * car.A
         # print(f"{beta_x:.2f} {delta_x:.2f} {v_avg:.2f} {long_g:.2f}")
         args = (car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
-        res = minimize(backup_loss_func, [0.0, 60], args=args, bounds=((-30, 30),(2*(max_f + max_r) - drag, max_tractive_force)), method="SLSQP", options=dict(disp=False), tol=1e-3)
+        res = minimize(backup_loss_func, [4.0, 200], args=args, bounds=((-30, 30),(2*(max_f + max_r) - drag, max_tractive_force)), method="Nelder-Mead", options=dict(disp=False), tol=1e-9)
         ay_it, lfx = res.x
         # print(f"{ay_it:.4f} {lfx:.4f} {(2*(max_f + max_r) - drag, max_tractive_force)}")
         bruh = res.nfev
         ay_v, cn_it, yaw_it, ax_v, long_error, ay_error = car_state_func(ay_it, lfx, car, v_avg, long_g, delta_x, beta_x, mu_corr, drag, max_f, max_r, max_tractive_force)
 
         if (long_error > long_err or ay_error > lat_err): # ay_error > lat_err:#
-            print(f"long error: {long_error:.4f}, ay error: {ay_error:.4f}")
+            # print(f"long error: {long_error:.4f}, ay error: {ay_error:.4f}")
             if zeros:
                 return 0.0, 0.0, 0.0, 0.0, bruh, True
             else:

@@ -464,8 +464,8 @@ class Car:
             return prev_kappa, False, prev_fx
         # first we solve for 3 points with a small offset of b from our slip ratio kappa to get the first and second derivatives
         # here is what is going on here https://mathformeremortals.wordpress.com/2013/01/12/a-numerical-second-derivative-from-three-points/
-        b = 1e-6
-        d_kappa = 1e-3
+        b = 1e-9
+        d_kappa = 1e-9
         kappas = np.array([kappa - b, kappa, kappa + b])
         if self.fast_mf == None:
             fx, _, _ = self.mf_tire.s_r_sweep(f_z, s_a, kappas, i_a=i_a, v=v_avg, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
@@ -491,10 +491,11 @@ class Car:
             if i == 0:
                 print(f"{f_z:.1f} BAD TIRE MODEL: NEGATIVE FX-SL SLOPE AT SL=0")
 
-        if abs(new_kappa - kappa) < 1e-3:
+        if abs(new_kappa - kappa) < 1e-9:
             maxima = (new_kappa > upper - d_kappa) or (new_kappa < lower + d_kappa) or ((np.sign(fx_2 - fx_3) == np.sign(fx_2)) and (np.sign(fx_2 - fx_1) == np.sign(fx_2)))
             # if maxima: print(f"{f_z:.1f} MAXIMA")
-            return new_kappa, maxima, fx_2
+            fx_return, _, _ = self.mf_tire.steady_state_mmd(f_z, s_a, new_kappa, i_a=i_a, v=v_avg, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
+            return new_kappa, maxima, fx_return
         if (kappa == og_upper and new_kappa > og_upper) or (kappa == og_lower and new_kappa < og_lower):
             # print(f"{f_z:.1f} LIMS")
             return kappa, True, fx_2

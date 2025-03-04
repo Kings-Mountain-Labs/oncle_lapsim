@@ -12,7 +12,7 @@ def car_state_func(ay_targ, lfx, car: Car, v_avg, long_g, delta_x, beta_x, mu_co
         print("v_avg is 0")
         v_avg = 0.01
     ax_i, ay_i = to_car_frame(long_g, ay_targ, beta_x)
-    if ax_i is 0.0:
+    if ax_i == 0.0:
         ax_i = 1e-9
     omega = ay_i / v_avg #Initial yaw rate [rad/s]
     fzfl, fzfr, fzrl, fzrr, _, _ = car.find_contact_patch_loads(long_g=ax_i, lat_g=ay_i, vel=v_avg)
