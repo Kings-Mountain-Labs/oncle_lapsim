@@ -649,9 +649,9 @@ def read_tir(file_path):
                             curr_tire_model[parts[0]] = parts[2]
                         else:
                             curr_tire_model["MASS1"] = float(parts[2])
-                    elif var_type == int:
+                    elif var_type is int:
                         curr_tire_model[parts[0]] = int(parts[2])
-                    elif var_type == float:
+                    elif var_type is float:
                         curr_tire_model[parts[0]] = float(parts[2])
                     else:
                         curr_tire_model[parts[0]] = parts[2]

@@ -1,4 +1,4 @@
-from pacejka_rs import *
+from pacejka_rs import PyPacejka
 import numpy as np
 from .tire_model_pacejka_2010 import MFModel
 

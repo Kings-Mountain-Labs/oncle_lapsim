@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .tire_model_pacejka_2010 import *
+from .tire_model_pacejka_2010 import MFModel
 import numpy as np
 from .ttc_loader import filter_eccentricity
 from typing import List
@@ -24,7 +24,7 @@ class Sweep:
 
 def sweep_model(tire_model, fig_title, run_data=None, sr_plot=False, fx_plot=True, fy_plot=True, mz_plot=True, mx_plot=True, zero_sl=True, min_pts=100):
     fig = make_subplots(rows=3, cols=2, subplot_titles=("Fy-SA", "Mz-SA", "Fx-SA", "Mx-SA"))
-    if type(tire_model) != list:
+    if type(tire_model) is not list:
         tire_model = [tire_model]
     color_num = 0
     run_dats: List[Sweep] = []
@@ -96,17 +96,13 @@ def sweep_model(tire_model, fig_title, run_data=None, sr_plot=False, fx_plot=Tru
     fig.update_yaxes(title_text='Self aligning moment (Nm)', row=1, col=2)
     fig.update_yaxes(title_text='Longitudinal Force', row=2, col=1)
     fig.update_yaxes(title_text='Overturning moment (Nm)', row=2, col=2)
-    v_mean, p_mean, sr_mean = run_data.V.mean(), run_data.P.mean(), run_data.SL.mean()
+    v_mean, p_mean, _ = run_data.V.mean(), run_data.P.mean(), run_data.SL.mean()
     fig.update_layout(template="plotly_dark", title_text=f"{fig_title} {v_mean:.2f}kph {p_mean:.2f} kPa")
     fig.show()
     
-
-
-    
-
 def sweep_SA(tire_model, fig_title):
     fig = make_subplots(rows=3, cols=2, subplot_titles=("Fy-SA", "Mz-SA", "Fx-SA", "Mx-SA"))
-    if type(tire_model) != list:
+    if type(tire_model) is not list:
         tire_model = [tire_model]
     color_num = 0
     run_dats: List[Sweep] = []
@@ -151,7 +147,7 @@ def sweep_SA(tire_model, fig_title):
 
 def sweep_SR(tire_model, fig_title):
     fig = make_subplots(rows=3, cols=2, subplot_titles=("Fy-SR", "Mz-SR", "Fx-SR", "Mx-SR"))
-    if type(tire_model) != list:
+    if type(tire_model) is not list:
         tire_model = [tire_model]
     color_num = 0
     run_dats: List[Sweep] = []
@@ -238,7 +234,7 @@ def split_run_with_MF_SA(run_data, tire_model, fig_title):
     fig.update_yaxes(title_text='Self aligning moment (Nm)', row=1, col=2)
     fig.update_yaxes(title_text='Longitudinal Force', row=2, col=1)
     fig.update_yaxes(title_text='Overturning moment (Nm)', row=2, col=2)
-    v_mean, p_mean, sr_mean = run_data.V.mean(), run_data.P.mean(), run_data.SL.mean()
+    v_mean, p_mean, _ = run_data.V.mean(), run_data.P.mean(), run_data.SL.mean()
     fig.update_layout(template="plotly_dark", title_text=f"{fig_title} {v_mean:.2f}kph {p_mean:.2f} kPa")
     fig.show()
 

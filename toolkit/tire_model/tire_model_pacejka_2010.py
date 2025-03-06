@@ -328,7 +328,7 @@ class MFModel(PacejkaModel):
         # It is assumed that the difference between the wheel centre
         # longitudinal velocity Vx and the longitudinal velocity Vcx of
         # the contact centre is negligible
-        if type(Fz) == np.ndarray:
+        if type(Fz) is np.ndarray:
             Fz[Fz < 0] = 0  # If any Fz is negative set it to zero
         elif Fz < 0:
             Fz = 0
@@ -341,7 +341,7 @@ class MFModel(PacejkaModel):
 
         modes: Mode = Mode(useLimitsCheck, useAlphaStar, useTurnSlip,
                            isLowSpeed, reductionSmooth, userDynamics)
-        if type(ualpha) == np.ndarray:
+        if type(ualpha) is np.ndarray:
             ualpha[Vcx == 0] = 0  # Zero speed (empirically discovered)
 
         post_pro_inputs = PostProInputs(omega, 0.0, 0.0, Fz, kappa, kappa, ualpha, gamma, phit, Vcx, alpha, kappa, gamma, phit, Fz, p, ncolumns, Fz)
@@ -463,7 +463,7 @@ class MFModel(PacejkaModel):
         Cx = self.PCX1 * self.LCX  # (> 0) (4.E11)
         mux = (self.PDX1 + self.PDX2 * dfz) * (1 + self.PPX3 * dpi + self.PPX4 * dpi**2) * (1 - self.PDX3 * gamma**2) * LMUX_star  # (4.E13)
         
-        if type(mux) == np.ndarray: # Zero Fz correction
+        if type(mux) is np.ndarray: # Zero Fz correction
             mux[Fz == 0] = 0
         elif Fz == 0:
             mux = 0
@@ -478,7 +478,7 @@ class MFModel(PacejkaModel):
         SHx = (self.PHX1 + self.PHX2 * dfz) * self.LHX  # (4.E17)
         SVx = Fz * (self.PVX1 + self.PVX2 * dfz) * self.LVX * LMUX_prime * zeta1  # (4.E18)
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # Low speed model
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # Low speed model
             SVx[modes.isLowSpeed] = SVx[modes.isLowSpeed] * reductionSmooth
             SHx[modes.isLowSpeed] = SHx[modes.isLowSpeed] * reductionSmooth
 
@@ -493,7 +493,7 @@ class MFModel(PacejkaModel):
             if np.any[Ex > 1]:
                 print('Ex over limit (>1), Eqn(4.E14)')
         
-        if type(Ex) == np.ndarray: # Zero Fz correction
+        if type(Ex) is np.ndarray: # Zero Fz correction
             Ex[Ex > 1] = 1
         elif Ex > 1:
             Ex = 1
@@ -502,7 +502,7 @@ class MFModel(PacejkaModel):
         Fx0 = Dx * np.sin(Cx * np.arctan(Bx * kappax - Ex * (Bx * kappax - np.arctan(Bx * kappax)))) + SVx  # (4.E9)
 
         if modes.userDynamics != 2:  # Backward speed check
-            if type(signDx) == np.ndarray:
+            if type(signDx) is np.ndarray:
                 Fx0[Vx < 0] = -Fx0[Vx < 0]
             elif Vx < 0:
                 Fx0 = -Fx0
@@ -582,7 +582,7 @@ class MFModel(PacejkaModel):
         SVy = postProInputs.Fz * (self.PVY1 + self.PVY2 * dfz) * self.LVY * LMUY_prime * zeta2 + SVyg  # (4.E29)
 
         # Low speed model
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
             SVy[modes.isLowSpeed] = SVy[modes.isLowSpeed] * reductionSmooth
             SHy[modes.isLowSpeed] = SHy[modes.isLowSpeed] * reductionSmooth
 
@@ -597,7 +597,7 @@ class MFModel(PacejkaModel):
             if np.any(Ey > 1):
                 print('Ey over limit (>1), Eqn(4.E24)')
         
-        if type(Ey) == np.ndarray: # Zero Fz correction
+        if type(Ey) is np.ndarray: # Zero Fz correction
             Ey[Ey > 1] = 1
         elif Ey > 1:
             Ey = 1
@@ -612,7 +612,7 @@ class MFModel(PacejkaModel):
             Fy0[postProInputs.uVcx < 0] = -Fy0[postProInputs.uVcx < 0]
 
         # Zero Fz correction
-        if type(muy) == np.ndarray: # Zero Fz correction
+        if type(muy) is np.ndarray: # Zero Fz correction
             muy[postProInputs.Fz == 0] = 0
         elif postProInputs.Fz == 0:
             muy = 0
@@ -680,7 +680,7 @@ class MFModel(PacejkaModel):
         if modes.useLimitsCheck:  # Limits check
             if np.any(Et > 1):
                 print('Et over limit (>1), Eqn(4.E44)')
-        if type(Et) == np.ndarray: # Zero Fz correction
+        if type(Et) is np.ndarray: # Zero Fz correction
             Et[Et > 1] = 1
         elif Et > 1:
             Et = 1
@@ -749,7 +749,7 @@ class MFModel(PacejkaModel):
         if modes.useLimitsCheck:
             if np.any(Exa > 1):
                 print('Exa over limit (>1), Eqn(4.E56)')
-        if type(Exa) == np.ndarray: # Zero Fz correction
+        if type(Exa) is np.ndarray: # Zero Fz correction
             Exa[Exa > 1] = 1
         elif Exa > 1:
             Exa = 1
@@ -774,7 +774,7 @@ class MFModel(PacejkaModel):
         if modes.useLimitsCheck:  # Limits check
             if np.any(Eyk > 1):
                 print('Eyk over limit (>1), Eqn(4.E64)')
-        if type(Eyk) == np.ndarray: # Zero Fz correction
+        if type(Eyk) is np.ndarray: # Zero Fz correction
             Eyk[Eyk > 1] = 1
         elif Eyk > 1:
             Eyk = 1
@@ -786,7 +786,7 @@ class MFModel(PacejkaModel):
         Gyk0 = np.cos(Cyk * np.arctan(Byk * SHyk - Eyk * (Byk * SHyk - np.arctan(Byk * SHyk))))  # (4.E60)
         Gyk = np.cos(Cyk * np.arctan(Byk * kappas - Eyk * (Byk * kappas - np.arctan(Byk * kappas)))) / Gyk0  # (> 0)(4.E59)
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # If we are using the lowspeed mode and there are any lowspeed points we need to apply the reduction
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # If we are using the lowspeed mode and there are any lowspeed points we need to apply the reduction
             SVyk[modes.isLowSpeed] = SVyk[modes.isLowSpeed] * reductionSmooth
 
         Fy = Gyk * Fy0 + SVyk  # (4.E58)
@@ -878,7 +878,7 @@ class MFModel(PacejkaModel):
                                                                    + (self.QSY5 + self.QSY6 * (Fz_unlimited / self.FNOMIN)) * gamma**2) * ((Fz_unlimited / self.FNOMIN)**self.QSY7 * (p / self.NOMPRES)**self.QSY8)  # (A48)
 
         # Backward speed check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[Vcx < 0] = -My[Vcx < 0]
         elif Vcx < 0:
             My = -My
@@ -900,13 +900,13 @@ class MFModel(PacejkaModel):
             My[idx] = My[idx] * np.sin(reduction)
 
         # Negative SR check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[kappa < lowLimit] = -My[kappa < lowLimit]
         elif kappa < lowLimit:
             My = -My
 
         # Zero speed check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[Vcx == 0] = 0
         elif Vcx == 0:
             My = 0
@@ -953,7 +953,7 @@ class MFModel(PacejkaModel):
         # IMPORTANT NOTE: the above equation does not contain LFZO in any written source, but "t"
         # is multiplied by LFZO in the TNO dteval function. This has been empirically discovered.
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
             t[modes.isLowSpeed] = t[modes.isLowSpeed] * reductionSmooth
             Mzr[modes.isLowSpeed] = Mzr[modes.isLowSpeed] * reductionSmooth
 
