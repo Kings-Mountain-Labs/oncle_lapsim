@@ -13,6 +13,7 @@ dependencies = [
     "maturin>=1.8.2",
     "mcap>=1.2.2",
     "nbformat>=5.10.4",
+    "numba>=0.61.2",
     "numpy>=2.2.3",
     "opencv-python>=4.11.0.86",
     "pandas>=2.2.3",
