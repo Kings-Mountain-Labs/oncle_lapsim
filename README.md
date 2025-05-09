@@ -5,11 +5,11 @@ This project originates from (ง •̀_•́)ง's[^1] Matlab implementation of
 
 There are 3 guiding objectives for this project: It should be reasonably extendable in a Theseus Ship fashion, It should be easily installed and run by someone with only a basic understanding of python, and It should be reasonably fast.
 
-[^1]: Politburo, [Spartan Racing, San Jose State University Formula SAE](www.sjsuformulasae.com)
+[^1]: Politburo, [Spartan Racing, San Jose State University Formula SAE](https://www.sjsuformulasae.com)
 
-[^2]: [Development of vehicle dynamics tools for motorsports](ir.library.oregonstate.edu/concern/graduate_thesis_or_dissertations/tx31qm51z)
+[^2]: [Development of vehicle dynamics tools for motorsports](https://ir.library.oregonstate.edu/concern/graduate_thesis_or_dissertations/tx31qm51z)
 
-[^3]: [MFeval](mfeval.wordpress.com)
+[^3]: [MFeval](https://mfeval.wordpress.com)
 
 # Getting Started
 This getting started guide uses the Github CLI to clone the repository because we have tended to find that it is the easiest way to get new git users correctly configured.
