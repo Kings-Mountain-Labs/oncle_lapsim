@@ -2,9 +2,10 @@
 An unfinished lap time simulation and vehicle dynamics toolbox made by people who like Oncle Jazz by Men I Trust
 
 This project originates from (ง •̀_•́)ง's[^1] Matlab implementation of Chris Patton's 2013 PhD dissertation[^2], which I (Ian[^1]) then ported to python and greatly extended. This toolbox also includes a Magic-Formula Tire model which is based on the Matlab implementation by Marco Furlan [^3].
+
 There are 3 guiding objectives for this project: It should be reasonably extendable in a Theseus Ship fashion, It should be easily installed and run by someone with only a basic understanding of python, and It should be reasonably fast.
 
-[^1]: Politburo, Spartan Racing, San Jose State University Formula SAE
+[^1]: Politburo, [Spartan Racing, San Jose State University Formula SAE](www.sjsuformulasae.com)
 
 [^2]: [Development of vehicle dynamics tools for motorsports](ir.library.oregonstate.edu/concern/graduate_thesis_or_dissertations/tx31qm51z)
 
@@ -19,7 +20,9 @@ This getting started guide uses the Github CLI to clone the repository because w
     - [Install Git for Windows](https://git-scm.com/downloads)
     - [Install the Github CLI](https://cli.github.com/)
     - [Install UV](https://docs.astral.sh/uv/getting-started/installation/)
-    - [Install Rust Toolchain](https://www.rust-lang.org/tools/install) <span style="color:red">ON WINDOWS, IT WILL ASK YOU IF YOU WANT TO INSTALL MSVC, YOU DO WANT TO</span>
+    - [Install Rust Toolchain](https://www.rust-lang.org/tools/install) 
+
+        <span style="color:red">ON WINDOWS, IT WILL ASK YOU IF YOU WANT TO INSTALL MSVC, YOU DO WANT TO</span>
     - Restart your computer for good measure
 2. Clone the repository
     - Open the github website to our repository
