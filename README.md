@@ -41,7 +41,7 @@ This getting started guide uses the Github CLI to clone the repository because w
         - Create a new terminal in VS Code
         - Change directories to the folder with the tire model lib
     ```console
-    cd toolkit\pacejka_rs\
+    cd toolkit/pacejka_rs/
     ```
         - Compile the Rust libraries (this will take a while the first time and you will need to do it whenever I have updated the rust code)
     ```console
