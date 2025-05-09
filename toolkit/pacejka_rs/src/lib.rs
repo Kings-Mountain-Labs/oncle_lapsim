@@ -1,7 +1,6 @@
 use pyo3::prelude::*;
 mod magic_formula;
 mod structs;
-use bincode::{deserialize, serialize};
 use magic_formula::*;
 use numpy::ndarray::{Array, Array1};
 use numpy::IntoPyArray;
@@ -133,7 +132,7 @@ impl PyPacejka {
                 self.solve_steady_state(fz, alpha, kappa, p, gamma, u_vcx, omega, phi, mu, flip_sa);
             return (kappa, false, fx);
         }
-        if (fz <= 0.0) {
+        if fz <= 0.0 {
             let kappa = 0.0;
             let fx = 0.0;
             return (kappa, false, fx);
@@ -141,8 +140,8 @@ impl PyPacejka {
         if i > 10 {
             return (kappa, false, prev_fx);
         }
-        let d_kappa = 0.001;
-        let b_kappa = 0.0001;
+        let d_kappa = 1e-6;
+        let b_kappa = 1e-7;
         let mut input = Inputs { fz, alpha, gamma, kappa, p, u_vcx, omega, phi,
         };
         let options = MFOptions { use_limits_check: false, use_alpha_star: false, use_turn_slip: false, use_dynamics: UseMode::SteadyState,
@@ -171,11 +170,12 @@ impl PyPacejka {
         if d_fx < 0.0 {
             new_kappa = (kappa + prev_kappa) / 2.0;
         }
-        if ((new_kappa - kappa).abs() < 0.0001) | ((fx_target - fx).abs() < 0.01) {
+        if ((new_kappa - kappa).abs() < b_kappa) | ((fx_target - fx).abs() < d_kappa) {
             let mid = ((fx - fx_up).signum() == fx.signum()) & ((fx - fx_down).signum() == fx.signum());
-            return (new_kappa, ((new_kappa > upper - d_kappa) | (new_kappa < lower + d_kappa) | mid), fx);
+            let (new_fx, _, _) = self.solve_steady_state(fz, alpha, new_kappa, p, gamma, u_vcx, omega, phi, mu, flip_sa);
+            return (new_kappa, ((new_kappa > upper - d_kappa) | (new_kappa < lower + d_kappa) | mid), new_fx)
         }
-        if (((kappa == og_upper) & (new_kappa > og_upper)) | ((kappa == og_lower) & (new_kappa < og_lower))) {
+        if ((kappa == og_upper) & (new_kappa > og_upper)) | ((kappa == og_lower) & (new_kappa < og_lower)) {
             return (kappa, true, fx);
         }
         new_kappa = new_kappa.max(lower).min(upper);

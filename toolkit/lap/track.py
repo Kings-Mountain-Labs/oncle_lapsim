@@ -4,7 +4,7 @@ import numpy as np
 import pymap3d as pm
 from toolkit.lap.line_normals import linenormals2d
 from scipy.ndimage import uniform_filter1d
-from toolkit.common.maths import clean_interp, calculate_curvature
+from toolkit.common import clean_interp, calculate_curvature
 from toolkit.common.constants import *
 from .channels import Channel, null_channel
 from .gps import GPS, smooth_gps, derive_chan_gps

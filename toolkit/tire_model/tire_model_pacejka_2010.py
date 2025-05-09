@@ -1,324 +1,15 @@
 import numpy as np
-from .tire_model_utils import MODEL_DEFAULTS, VarInf, PostProInputs, Mode, FAndmoments, set_x, Result, RetValue, InputRanges, dump_tk
-from .tire_fitting_masks import LABELS, NAMES
-from typing import List
-from toolkit.loading_util import make_path
+from .tire_model_utils import VarInf, PostProInputs, Mode, ForceMoments, Result, RetValue, InputRanges, dump_tk
+from toolkit.common import safe_sign, interpolate
+from .pacejka_coefficients import PacejkaModel
 
-def safe_sign(arr):
-    if type(arr) != np.ndarray: # Zero Fz correction
-        if arr >= 0:
-            return 1.0
-        return -1.0
-    sign = np.sign(arr)
-    sign[sign == 0] = 1
-    return sign
-
-def readTIR(FileNameLocation):
-    """
-    Reads the *.tir file at the specified path and returns a TireMFModel for the given file
-    """
-
-    curr_tire_model = MODEL_DEFAULTS
-
-    mass_switch = True  # there are two MASS vars and we need to throw away the first one
-    with open(FileNameLocation, 'r') as filehandle:
-        for line in filehandle:
-            if line[0] != "$" and line[0] != "[":
-                parts = line.split()
-                if len(parts) > 2 and parts[0] in curr_tire_model.keys():
-                    var_type = type(curr_tire_model[parts[0]])
-                    if parts[0] == "MASS":
-                        if mass_switch:
-                            mass_switch = False
-                            curr_tire_model[parts[0]] = parts[2]
-                        else:
-                            curr_tire_model["MASS1"] = float(parts[2])
-                    elif var_type == int:
-                        curr_tire_model[parts[0]] = int(parts[2])
-                    elif var_type == float:
-                        curr_tire_model[parts[0]] = float(parts[2])
-                    else:
-                        curr_tire_model[parts[0]] = parts[2]
-    tm = TireMFModel(curr_tire_model)
-    # Set nominal parameters of the model (DO NOT CHANGE AFTER)
-    tm.UNLOADED_RADIUS = 0.26  # Unloaded tire radius
-    tm.FNOMIN = 1500  # Nominal load THIS MUST BE SET TO AT LEAST 50% OF THE MAXIMUM LOAD OR YOU WILL GET FUCKING CRAZY HARD TO DIAGNOSE ERRORS
-    tm.LONGVL = 11.1  # Nominal reference speed
-    tm.NOMPRES = 83000  # Nominal inflation pressure Pa
-    tm.FZMIN = 100
-    return tm
-
-def writeTIR(FileNameLocation, tm):
-    """
-    Writes the *.tir file at the specified path and returns a TireMFModel for the given file
-    """
-    additional_params = ["UNLOADED_RADIUS", "FNOMIN", "LONGVL", "NOMPRES", "FZMIN"]
-    num_params = [tm.UNLOADED_RADIUS, tm.FNOMIN, tm.LONGVL, tm.NOMPRES, tm.FZMIN]
-    lables_param = ["Free tyre radius", "Nominal wheel load", "Nominal speed", "Nominal tyre inflation pressure - NEVER MODIFY THIS PARAMETER", "Minimum allowed wheel load"]
-    params = tm.dump_params()
-    row = "{name:<25s}=    {val:<12g}   ${label}\n".format # This formating works, dont mess with it
-    with open(FileNameLocation, 'w') as filehandle:
-        with open(make_path('./Data/TTCData/TIR_Templates/FSAE_Defaults.tir'), 'r') as template:
-            for line in template:
-                if line[0] != "$" and line[0] != "[":
-                    parts = line.split()
-                    if len(parts) > 2:
-                        if parts[0] in NAMES:
-                            param_ind = NAMES.index(parts[0])
-                            param = params[param_ind]
-                            filehandle.write(row(name=parts[0], val=param, label=LABELS[param_ind]))
-                            # filehandle.write(f"{parts[0]} = {param} ${LABLES[param_ind]}\n")
-                        elif parts[0] in additional_params:
-                            param_ind = additional_params.index(parts[0])
-                            param = num_params[param_ind]
-                            # filehandle.write(f"{parts[0]} = {param} ${lables_param[param_ind]}\n")
-                            filehandle.write(row(name=parts[0], val=param, label=lables_param[param_ind]))
-                        else:
-                            filehandle.write(line)
-                    else:
-                        filehandle.write(line)
-                else:
-                    filehandle.write(line)
-                        
-
-def tire_model_from_arr(arr):
-    tm = TireMFModel(MODEL_DEFAULTS)
-    set_x(arr, tm)
-    return tm
-
-
-class TireMFModel:
+class MFModel(PacejkaModel):
     # TireMFModel Solver for Magic Formula 5.2, 6.1 and 6.2 Tyre Models
-    def __init__(self, curr_tire_model) -> None:
+    def __init__(self, tire_coefficients: dict) -> None:
         # Parameters not specified in the TIR file
         # Used to avoid low speed singularity
         self.epsilon = 1e-6  # [Eqn (4.E6a) Page 178 - Book]
-
-        self.FITTYP = curr_tire_model["FITTYP"]
-        self.LONGVL = curr_tire_model["LONGVL"]
-        self.VXLOW = curr_tire_model["VXLOW"]
-        self.UNLOADED_RADIUS = curr_tire_model["UNLOADED_RADIUS"]
-        self.WIDTH = curr_tire_model["WIDTH"]
-        self.ASPECT_RATIO = curr_tire_model["ASPECT_RATIO"]
-        self.RIM_RADIUS = curr_tire_model["RIM_RADIUS"]
-        self.INFLPRES = curr_tire_model["INFLPRES"]
-        self.NOMPRES = curr_tire_model["NOMPRES"]
-        self.FNOMIN = curr_tire_model["FNOMIN"]
-        self.VERTICAL_STIFFNESS = curr_tire_model["VERTICAL_STIFFNESS"]
-        self.BREFF = curr_tire_model["BREFF"]
-        self.DREFF = curr_tire_model["DREFF"]
-        self.FREFF = curr_tire_model["FREFF"]
-        self.Q_RE0 = curr_tire_model["Q_RE0"]
-        self.Q_V1 = curr_tire_model["Q_V1"]
-        self.Q_V2 = curr_tire_model["Q_V2"]
-        self.Q_FZ2 = curr_tire_model["Q_FZ2"]
-        self.Q_FCX = curr_tire_model["Q_FCX"]
-        self.Q_FCY = curr_tire_model["Q_FCY"]
-        self.Q_CAM = curr_tire_model["Q_CAM"]
-        self.PFZ1 = curr_tire_model["PFZ1"]
-        self.BOTTOM_OFFST = curr_tire_model["BOTTOM_OFFST"]
-        self.BOTTOM_STIFF = curr_tire_model["BOTTOM_STIFF"]
-        self.LONGITUDINAL_STIFFNESS = curr_tire_model["LONGITUDINAL_STIFFNESS"]
-        self.LATERAL_STIFFNESS = curr_tire_model["LATERAL_STIFFNESS"]
-        self.Q_BVX = curr_tire_model["Q_BVX"]
-        self.Q_BVT = curr_tire_model["Q_BVT"]
-        self.PCFX1 = curr_tire_model["PCFX1"]
-        self.PCFX2 = curr_tire_model["PCFX2"]
-        self.PCFX3 = curr_tire_model["PCFX3"]
-        self.PCFY1 = curr_tire_model["PCFY1"]
-        self.PCFY2 = curr_tire_model["PCFY2"]
-        self.PCFY3 = curr_tire_model["PCFY3"]
-        self.PCMZ1 = curr_tire_model["PCMZ1"]
-        self.Q_RA1 = curr_tire_model["Q_RA1"]
-        self.Q_RA2 = curr_tire_model["Q_RA2"]
-        self.Q_RB1 = curr_tire_model["Q_RB1"]
-        self.Q_RB2 = curr_tire_model["Q_RB2"]
-        self.PRESMIN = curr_tire_model["PRESMIN"]
-        self.PRESMAX = curr_tire_model["PRESMAX"]
-        self.FZMIN = curr_tire_model["FZMIN"]
-        self.FZMAX = curr_tire_model["FZMAX"]
-        self.KPUMIN = curr_tire_model["KPUMIN"]
-        self.KPUMAX = curr_tire_model["KPUMAX"]
-        self.ALPMIN = curr_tire_model["ALPMIN"]
-        self.ALPMAX = curr_tire_model["ALPMAX"]
-        self.CAMMIN = curr_tire_model["CAMMIN"]
-        self.CAMMAX = curr_tire_model["CAMMAX"]
-        self.LFZO = curr_tire_model["LFZO"]
-        self.LCX = curr_tire_model["LCX"]
-        self.LMUX = curr_tire_model["LMUX"]
-        self.LEX = curr_tire_model["LEX"]
-        self.LKX = curr_tire_model["LKX"]
-        self.LHX = curr_tire_model["LHX"]
-        self.LVX = curr_tire_model["LVX"]
-        self.LCY = curr_tire_model["LCY"]
-        self.LMUY = curr_tire_model["LMUY"]
-        self.LEY = curr_tire_model["LEY"]
-        self.LKY = curr_tire_model["LKY"]
-        self.LHY = curr_tire_model["LHY"]
-        self.LVY = curr_tire_model["LVY"]
-        self.LTR = curr_tire_model["LTR"]
-        self.LRES = curr_tire_model["LRES"]
-        self.LXAL = curr_tire_model["LXAL"]
-        self.LYKA = curr_tire_model["LYKA"]
-        self.LVYKA = curr_tire_model["LVYKA"]
-        self.LS = curr_tire_model["LS"]
-        self.LKYC = curr_tire_model["LKYC"]
-        self.LKZC = curr_tire_model["LKZC"]
-        self.LVMX = curr_tire_model["LVMX"]
-        self.LMX = curr_tire_model["LMX"]
-        self.LMY = curr_tire_model["LMY"]
-        self.LMP = curr_tire_model["LMP"]
-        self.PCX1 = curr_tire_model["PCX1"]
-        self.PDX1 = curr_tire_model["PDX1"]
-        self.PDX2 = curr_tire_model["PDX2"]
-        self.PDX3 = curr_tire_model["PDX3"]
-        self.PEX1 = curr_tire_model["PEX1"]
-        self.PEX2 = curr_tire_model["PEX2"]
-        self.PEX3 = curr_tire_model["PEX3"]
-        self.PEX4 = curr_tire_model["PEX4"]
-        self.PKX1 = curr_tire_model["PKX1"]
-        self.PKX2 = curr_tire_model["PKX2"]
-        self.PKX3 = curr_tire_model["PKX3"]
-        self.PHX1 = curr_tire_model["PHX1"]
-        self.PHX2 = curr_tire_model["PHX2"]
-        self.PVX1 = curr_tire_model["PVX1"]
-        self.PVX2 = curr_tire_model["PVX2"]
-        self.PPX1 = curr_tire_model["PPX1"]
-        self.PPX2 = curr_tire_model["PPX2"]
-        self.PPX3 = curr_tire_model["PPX3"]
-        self.PPX4 = curr_tire_model["PPX4"]
-        self.RBX1 = curr_tire_model["RBX1"]
-        self.RBX2 = curr_tire_model["RBX2"]
-        self.RBX3 = curr_tire_model["RBX3"]
-        self.RCX1 = curr_tire_model["RCX1"]
-        self.REX1 = curr_tire_model["REX1"]
-        self.REX2 = curr_tire_model["REX2"]
-        self.RHX1 = curr_tire_model["RHX1"]
-        self.QSX1 = curr_tire_model["QSX1"]
-        self.QSX2 = curr_tire_model["QSX2"]
-        self.QSX3 = curr_tire_model["QSX3"]
-        self.QSX4 = curr_tire_model["QSX4"]
-        self.QSX5 = curr_tire_model["QSX5"]
-        self.QSX6 = curr_tire_model["QSX6"]
-        self.QSX7 = curr_tire_model["QSX7"]
-        self.QSX8 = curr_tire_model["QSX8"]
-        self.QSX9 = curr_tire_model["QSX9"]
-        self.QSX10 = curr_tire_model["QSX10"]
-        self.QSX11 = curr_tire_model["QSX11"]
-        self.QSX12 = curr_tire_model["QSX12"]
-        self.QSX13 = curr_tire_model["QSX13"]
-        self.QSX14 = curr_tire_model["QSX14"]
-        self.PPMX1 = curr_tire_model["PPMX1"]
-        self.PCY1 = curr_tire_model["PCY1"]
-        self.PDY1 = curr_tire_model["PDY1"]
-        self.PDY2 = curr_tire_model["PDY2"]
-        self.PDY3 = curr_tire_model["PDY3"]
-        self.PEY1 = curr_tire_model["PEY1"]
-        self.PEY2 = curr_tire_model["PEY2"]
-        self.PEY3 = curr_tire_model["PEY3"]
-        self.PEY4 = curr_tire_model["PEY4"]
-        self.PEY5 = curr_tire_model["PEY5"]
-        self.PKY1 = curr_tire_model["PKY1"]
-        self.PKY2 = curr_tire_model["PKY2"]
-        self.PKY3 = curr_tire_model["PKY3"]
-        self.PKY4 = curr_tire_model["PKY4"]
-        self.PKY5 = curr_tire_model["PKY5"]
-        self.PKY6 = curr_tire_model["PKY6"]
-        self.PKY7 = curr_tire_model["PKY7"]
-        self.PHY1 = curr_tire_model["PHY1"]
-        self.PHY2 = curr_tire_model["PHY2"]
-        self.PVY1 = curr_tire_model["PVY1"]
-        self.PVY2 = curr_tire_model["PVY2"]
-        self.PVY3 = curr_tire_model["PVY3"]
-        self.PVY4 = curr_tire_model["PVY4"]
-        self.PPY1 = curr_tire_model["PPY1"]
-        self.PPY2 = curr_tire_model["PPY2"]
-        self.PPY3 = curr_tire_model["PPY3"]
-        self.PPY4 = curr_tire_model["PPY4"]
-        self.PPY5 = curr_tire_model["PPY5"]
-        self.RBY1 = curr_tire_model["RBY1"]
-        self.RBY2 = curr_tire_model["RBY2"]
-        self.RBY3 = curr_tire_model["RBY3"]
-        self.RBY4 = curr_tire_model["RBY4"]
-        self.RCY1 = curr_tire_model["RCY1"]
-        self.REY1 = curr_tire_model["REY1"]
-        self.REY2 = curr_tire_model["REY2"]
-        self.RHY1 = curr_tire_model["RHY1"]
-        self.RHY2 = curr_tire_model["RHY2"]
-        self.RVY1 = curr_tire_model["RVY1"]
-        self.RVY2 = curr_tire_model["RVY2"]
-        self.RVY3 = curr_tire_model["RVY3"]
-        self.RVY4 = curr_tire_model["RVY4"]
-        self.RVY5 = curr_tire_model["RVY5"]
-        self.RVY6 = curr_tire_model["RVY6"]
-        self.QSY1 = curr_tire_model["QSY1"]
-        self.QSY2 = curr_tire_model["QSY2"]
-        self.QSY3 = curr_tire_model["QSY3"]
-        self.QSY4 = curr_tire_model["QSY4"]
-        self.QSY5 = curr_tire_model["QSY5"]
-        self.QSY6 = curr_tire_model["QSY6"]
-        self.QSY7 = curr_tire_model["QSY7"]
-        self.QSY8 = curr_tire_model["QSY8"]
-        self.QBZ1 = curr_tire_model["QBZ1"]
-        self.QBZ2 = curr_tire_model["QBZ2"]
-        self.QBZ3 = curr_tire_model["QBZ3"]
-        self.QBZ4 = curr_tire_model["QBZ4"]
-        self.QBZ5 = curr_tire_model["QBZ5"]
-        self.QBZ9 = curr_tire_model["QBZ9"]
-        self.QBZ10 = curr_tire_model["QBZ10"]
-        self.QCZ1 = curr_tire_model["QCZ1"]
-        self.QDZ1 = curr_tire_model["QDZ1"]
-        self.QDZ2 = curr_tire_model["QDZ2"]
-        self.QDZ3 = curr_tire_model["QDZ3"]
-        self.QDZ4 = curr_tire_model["QDZ4"]
-        self.QDZ6 = curr_tire_model["QDZ6"]
-        self.QDZ7 = curr_tire_model["QDZ7"]
-        self.QDZ8 = curr_tire_model["QDZ8"]
-        self.QDZ9 = curr_tire_model["QDZ9"]
-        self.QDZ10 = curr_tire_model["QDZ10"]
-        self.QDZ11 = curr_tire_model["QDZ11"]
-        self.QEZ1 = curr_tire_model["QEZ1"]
-        self.QEZ2 = curr_tire_model["QEZ2"]
-        self.QEZ3 = curr_tire_model["QEZ3"]
-        self.QEZ4 = curr_tire_model["QEZ4"]
-        self.QEZ5 = curr_tire_model["QEZ5"]
-        self.QHZ1 = curr_tire_model["QHZ1"]
-        self.QHZ2 = curr_tire_model["QHZ2"]
-        self.QHZ3 = curr_tire_model["QHZ3"]
-        self.QHZ4 = curr_tire_model["QHZ4"]
-        self.PPZ1 = curr_tire_model["PPZ1"]
-        self.PPZ2 = curr_tire_model["PPZ2"]
-        self.SSZ1 = curr_tire_model["SSZ1"]
-        self.SSZ2 = curr_tire_model["SSZ2"]
-        self.SSZ3 = curr_tire_model["SSZ3"]
-        self.SSZ4 = curr_tire_model["SSZ4"]
-        self.PDXP1 = curr_tire_model["PDXP1"]
-        self.PDXP2 = curr_tire_model["PDXP2"]
-        self.PDXP3 = curr_tire_model["PDXP3"]
-        self.PKYP1 = curr_tire_model["PKYP1"]
-        self.PDYP1 = curr_tire_model["PDYP1"]
-        self.PDYP2 = curr_tire_model["PDYP2"]
-        self.PDYP3 = curr_tire_model["PDYP3"]
-        self.PDYP4 = curr_tire_model["PDYP4"]
-        self.PHYP1 = curr_tire_model["PHYP1"]
-        self.PHYP2 = curr_tire_model["PHYP2"]
-        self.PHYP3 = curr_tire_model["PHYP3"]
-        self.PHYP4 = curr_tire_model["PHYP4"]
-        self.PECP1 = curr_tire_model["PECP1"]
-        self.PECP2 = curr_tire_model["PECP2"]
-        self.QDTP1 = curr_tire_model["QDTP1"]
-        self.QCRP1 = curr_tire_model["QCRP1"]
-        self.QCRP2 = curr_tire_model["QCRP2"]
-        self.QBRP1 = curr_tire_model["QBRP1"]
-        self.QDRP1 = curr_tire_model["QDRP1"]
-        self.Q_FCY2 = curr_tire_model["Q_FCY2"]
-        self.Q_CAM1 = curr_tire_model["Q_CAM1"]
-        self.Q_CAM2 = curr_tire_model["Q_CAM2"]
-        self.Q_CAM3 = curr_tire_model["Q_CAM3"]
-        self.LMUV = curr_tire_model["LMUV"]
-        self.Q_FYS1 = 0.0
-        self.Q_FYS2 = 0.0
-        self.Q_FYS3 = 0.0
+        super().__init__(tire_coefficients)
 
     def fullSteadyState(self, inputs, use_turnslip=False):
 
@@ -637,7 +328,7 @@ class TireMFModel:
         # It is assumed that the difference between the wheel centre
         # longitudinal velocity Vx and the longitudinal velocity Vcx of
         # the contact centre is negligible
-        if type(Fz) == np.ndarray:
+        if type(Fz) is np.ndarray:
             Fz[Fz < 0] = 0  # If any Fz is negative set it to zero
         elif Fz < 0:
             Fz = 0
@@ -650,7 +341,7 @@ class TireMFModel:
 
         modes: Mode = Mode(useLimitsCheck, useAlphaStar, useTurnSlip,
                            isLowSpeed, reductionSmooth, userDynamics)
-        if type(ualpha) == np.ndarray:
+        if type(ualpha) is np.ndarray:
             ualpha[Vcx == 0] = 0  # Zero speed (empirically discovered)
 
         post_pro_inputs = PostProInputs(omega, 0.0, 0.0, Fz, kappa, kappa, ualpha, gamma, phit, Vcx, alpha, kappa, gamma, phit, Fz, p, ncolumns, Fz)
@@ -772,7 +463,7 @@ class TireMFModel:
         Cx = self.PCX1 * self.LCX  # (> 0) (4.E11)
         mux = (self.PDX1 + self.PDX2 * dfz) * (1 + self.PPX3 * dpi + self.PPX4 * dpi**2) * (1 - self.PDX3 * gamma**2) * LMUX_star  # (4.E13)
         
-        if type(mux) == np.ndarray: # Zero Fz correction
+        if type(mux) is np.ndarray: # Zero Fz correction
             mux[Fz == 0] = 0
         elif Fz == 0:
             mux = 0
@@ -787,7 +478,7 @@ class TireMFModel:
         SHx = (self.PHX1 + self.PHX2 * dfz) * self.LHX  # (4.E17)
         SVx = Fz * (self.PVX1 + self.PVX2 * dfz) * self.LVX * LMUX_prime * zeta1  # (4.E18)
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # Low speed model
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # Low speed model
             SVx[modes.isLowSpeed] = SVx[modes.isLowSpeed] * reductionSmooth
             SHx[modes.isLowSpeed] = SHx[modes.isLowSpeed] * reductionSmooth
 
@@ -802,7 +493,7 @@ class TireMFModel:
             if np.any[Ex > 1]:
                 print('Ex over limit (>1), Eqn(4.E14)')
         
-        if type(Ex) == np.ndarray: # Zero Fz correction
+        if type(Ex) is np.ndarray: # Zero Fz correction
             Ex[Ex > 1] = 1
         elif Ex > 1:
             Ex = 1
@@ -811,7 +502,7 @@ class TireMFModel:
         Fx0 = Dx * np.sin(Cx * np.arctan(Bx * kappax - Ex * (Bx * kappax - np.arctan(Bx * kappax)))) + SVx  # (4.E9)
 
         if modes.userDynamics != 2:  # Backward speed check
-            if type(signDx) == np.ndarray:
+            if type(signDx) is np.ndarray:
                 Fx0[Vx < 0] = -Fx0[Vx < 0]
             elif Vx < 0:
                 Fx0 = -Fx0
@@ -891,7 +582,7 @@ class TireMFModel:
         SVy = postProInputs.Fz * (self.PVY1 + self.PVY2 * dfz) * self.LVY * LMUY_prime * zeta2 + SVyg  # (4.E29)
 
         # Low speed model
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
             SVy[modes.isLowSpeed] = SVy[modes.isLowSpeed] * reductionSmooth
             SHy[modes.isLowSpeed] = SHy[modes.isLowSpeed] * reductionSmooth
 
@@ -906,7 +597,7 @@ class TireMFModel:
             if np.any(Ey > 1):
                 print('Ey over limit (>1), Eqn(4.E24)')
         
-        if type(Ey) == np.ndarray: # Zero Fz correction
+        if type(Ey) is np.ndarray: # Zero Fz correction
             Ey[Ey > 1] = 1
         elif Ey > 1:
             Ey = 1
@@ -921,7 +612,7 @@ class TireMFModel:
             Fy0[postProInputs.uVcx < 0] = -Fy0[postProInputs.uVcx < 0]
 
         # Zero Fz correction
-        if type(muy) == np.ndarray: # Zero Fz correction
+        if type(muy) is np.ndarray: # Zero Fz correction
             muy[postProInputs.Fz == 0] = 0
         elif postProInputs.Fz == 0:
             muy = 0
@@ -989,7 +680,7 @@ class TireMFModel:
         if modes.useLimitsCheck:  # Limits check
             if np.any(Et > 1):
                 print('Et over limit (>1), Eqn(4.E44)')
-        if type(Et) == np.ndarray: # Zero Fz correction
+        if type(Et) is np.ndarray: # Zero Fz correction
             Et[Et > 1] = 1
         elif Et > 1:
             Et = 1
@@ -1058,7 +749,7 @@ class TireMFModel:
         if modes.useLimitsCheck:
             if np.any(Exa > 1):
                 print('Exa over limit (>1), Eqn(4.E56)')
-        if type(Exa) == np.ndarray: # Zero Fz correction
+        if type(Exa) is np.ndarray: # Zero Fz correction
             Exa[Exa > 1] = 1
         elif Exa > 1:
             Exa = 1
@@ -1083,7 +774,7 @@ class TireMFModel:
         if modes.useLimitsCheck:  # Limits check
             if np.any(Eyk > 1):
                 print('Eyk over limit (>1), Eqn(4.E64)')
-        if type(Eyk) == np.ndarray: # Zero Fz correction
+        if type(Eyk) is np.ndarray: # Zero Fz correction
             Eyk[Eyk > 1] = 1
         elif Eyk > 1:
             Eyk = 1
@@ -1095,7 +786,7 @@ class TireMFModel:
         Gyk0 = np.cos(Cyk * np.arctan(Byk * SHyk - Eyk * (Byk * SHyk - np.arctan(Byk * SHyk))))  # (4.E60)
         Gyk = np.cos(Cyk * np.arctan(Byk * kappas - Eyk * (Byk * kappas - np.arctan(Byk * kappas)))) / Gyk0  # (> 0)(4.E59)
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # If we are using the lowspeed mode and there are any lowspeed points we need to apply the reduction
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:  # If we are using the lowspeed mode and there are any lowspeed points we need to apply the reduction
             SVyk[modes.isLowSpeed] = SVyk[modes.isLowSpeed] * reductionSmooth
 
         Fy = Gyk * Fy0 + SVyk  # (4.E58)
@@ -1187,7 +878,7 @@ class TireMFModel:
                                                                    + (self.QSY5 + self.QSY6 * (Fz_unlimited / self.FNOMIN)) * gamma**2) * ((Fz_unlimited / self.FNOMIN)**self.QSY7 * (p / self.NOMPRES)**self.QSY8)  # (A48)
 
         # Backward speed check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[Vcx < 0] = -My[Vcx < 0]
         elif Vcx < 0:
             My = -My
@@ -1209,13 +900,13 @@ class TireMFModel:
             My[idx] = My[idx] * np.sin(reduction)
 
         # Negative SR check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[kappa < lowLimit] = -My[kappa < lowLimit]
         elif kappa < lowLimit:
             My = -My
 
         # Zero speed check
-        if type(My) == np.ndarray: # Zero Fz correction
+        if type(My) is np.ndarray: # Zero Fz correction
             My[Vcx == 0] = 0
         elif Vcx == 0:
             My = 0
@@ -1262,7 +953,7 @@ class TireMFModel:
         # IMPORTANT NOTE: the above equation does not contain LFZO in any written source, but "t"
         # is multiplied by LFZO in the TNO dteval function. This has been empirically discovered.
 
-        if type(modes.isLowSpeed) == np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
+        if type(modes.isLowSpeed) is np.ndarray and np.count_nonzero(modes.isLowSpeed) > 0:
             t[modes.isLowSpeed] = t[modes.isLowSpeed] * reductionSmooth
             Mzr[modes.isLowSpeed] = Mzr[modes.isLowSpeed] * reductionSmooth
 
@@ -1297,7 +988,7 @@ class TireMFModel:
 
         Mz, t, Mzr = self.calculateMz(postProInputs, reductionSmooth, modes, alpha_star, gamma_star, LMUY_star, alpha_prime, Fz0_prime, LMUY_prime, dfz, dpi, alphar, alphat, Kxk, Kya_prime, Fy, Fx, Dr, Cr, Br, Dt, Ct, Bt, Et, SVyk, zeta2)
 
-        forces_and_moments = FAndmoments()
+        forces_and_moments = ForceMoments()
         forces_and_moments.Fx = Fx
         forces_and_moments.Fy = Fy
         forces_and_moments.Fz = postProInputs.Fz
@@ -1578,7 +1269,7 @@ class TireMFModel:
 
         return Cx, Cy, sigmax, sigmay
 
-    def calculateInstantaneousKya(self, postProInputs: PostProInputs, forces_and_moments: FAndmoments):
+    def calculateInstantaneousKya(self, postProInputs: PostProInputs, forces_and_moments: ForceMoments):
         Fy = forces_and_moments.Fy
         s_a = postProInputs.alpha
 
@@ -1970,8 +1661,3 @@ class TireMFModel:
         c = Eyk - 1  # Convert Dx to c to satisfy conditions
 
         return (Eyk > 1), Eyk, c
-
-def interpolate(xo, yo, x1, y1, x):
-    # INTERPOLATE Interpolate between two points.
-    y = (yo * (x1 - x) + y1 * (x - xo)) / (x1 - xo)
-    return y

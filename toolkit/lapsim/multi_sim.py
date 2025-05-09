@@ -1,18 +1,18 @@
-from sim_qss import sim_qss
-from toolkit.cars.car_configuration import Car
+from .sim_qss import sim_qss
+from toolkit.cars import Car
 from toolkit.lap.track import *
 import numpy as np
-from sim_qts import sim_qts
+from .sim_qts import sim_qts
 import plotly.graph_objects as go
-import time
+import time, copy, os
 from plotly.subplots import make_subplots
 import plotly.express as px
 from toolkit.common.constants import *
 from multiprocessing import Pool
-import copy
 from tqdm.notebook import tqdm
-import os
 from toolkit.las_solvers.las import LAS
+from typing import List
+import threading
   
 def calculate_lap_times(car_tracks): # car_tracks is a tuple of (car, tracks) so that it can be used with pool.imap so that the progress bar works (it wont with starmap)
     car, tracks_raw, las_r, mu_corr, target, sim_type = car_tracks
@@ -22,9 +22,9 @@ def calculate_lap_times(car_tracks): # car_tracks is a tuple of (car, tracks) so
     lap_times = []
     for track in tracks:
         if sim_type == 'qts':
-            lon, lat, omega, dt, long, vel, vel_init, ddt, critc, _, _, _, d_f, d_r = sim_qts(car, track, las, target, silent=True)
+            lon, lat, omega, dt, long, vel, vel_init, ddt, critc, _, _, _, d_f, d_r, count, last_changed = sim_qts(car, track, las, target, silent=True)
         elif sim_type == 'qss':
-            lon, lat, omega, dt, long, vel, vel_init, ddt, critc, _, _, _, d_f, d_r = sim_qss(car, track, las, target, silent=True)
+            lon, lat, omega, dt, long, vel, vel_init, ddt, critc, _, _, _, d_f, d_r, count, last_changed = sim_qss(car, track, las, target, silent=True)
         else:
             raise ValueError(f"sim_type must be either 'qts' or 'qss', not {sim_type}")
         lap_time = 0
@@ -40,6 +40,8 @@ def calculate_skidpad(car_tracks): # car_tracks is a tuple of (car, tracks) so t
     return (beta, delta, ay, yaw, ax, bruh, vel, lap_time), car
 
 class MultiSim:
+    cars: List[Car]
+    tracks: List[Track]
     def __init__(self, tracks, car_func, x, y, x_name, y_name):
         self.x_name, self.y_name = x_name, y_name
         self.tracks = tracks

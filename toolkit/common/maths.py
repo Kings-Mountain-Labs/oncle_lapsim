@@ -1,22 +1,22 @@
-# from numba import njit
+from numba import njit
 import numpy as np
 
-# @njit
+@njit
 def skew(x):
     # np.dot(skew(x), y) = np.cross(x, y)
     return np.array([[0, -x[2], x[1]],
                      [x[2], 0, -x[0]],
                      [-x[1], x[0], 0]])
-# @njit
+@njit
 def cross_2d(u, v):
     return u[0] * v[1] - u[1] * v[0]
 
-# @njit
+@njit
 def norm_2d(v):
     return np.sqrt(v[0] ** 2 + v[1] ** 2)
 
 
-# @njit
+@njit
 def is_point_in_triangle(p, p1, p2, p3):
     # Project points onto the plane defined by p1, p2, and p3
     # we need to make the points 2d so we can use signed distances
@@ -54,7 +54,7 @@ def is_point_in_triangle(p, p1, p2, p3):
         distances *= -1.0
     return distances.max()
 
-# @njit
+@njit
 def db_for_point_in_triangle(p, p1, p2, p3):
     # Project points onto the plane defined by p1, p2, and p3
     # we need to make the points 2d so we can use signed distances
@@ -94,6 +94,11 @@ def clean_interp(x, xp, fp):
     return ret_val
     
 
+def interpolate(xo, yo, x1, y1, x):
+    # INTERPOLATE Interpolate between two points.
+    y = (yo * (x1 - x) + y1 * (x - xo)) / (x1 - xo)
+    return y
+
 def powspace(start, stop, power, num):
     start = np.power(start, 1/float(power))
     stop = np.power(stop, 1/float(power))
@@ -110,6 +115,34 @@ def vel_at_tire(v, omega, beta, x, y):
     v_y = v * np.sin(beta) - omega * x
     v_v = np.sqrt(v_x**2 + v_y**2)
     return v_v
+
+def safe_sign(arr):
+    if type(arr) is not np.ndarray: # Zero Fz correction
+        if arr >= 0:
+            return 1.0
+        return -1.0
+    sign = np.sign(arr)
+    sign[sign == 0] = 1
+    return sign
+
+@njit
+def sin(a):
+    return np.sin(a)
+@njit
+def cos(a):
+    return np.cos(a)
+@njit
+def tan(a):
+    return np.tan(a)
+@njit
+def arcsin(a):
+    return np.arcsin(a)
+@njit
+def arccos(a):
+    return np.arccos(a)
+@njit
+def arctan(a):
+    return np.arctan(a)
 
 UP = np.deg2rad(15)
 def clip(x, up=UP):

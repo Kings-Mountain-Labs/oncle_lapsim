@@ -1,7 +1,7 @@
 import numpy as np
-from toolkit.cars.car_configuration import Car
+from toolkit.cars import Car
 from .sss import Steady_State_Solver
-from toolkit.common.maths import to_vel_frame, clip
+from toolkit.common import to_vel_frame, clip
 
 class Parachute(Steady_State_Solver):
     def __init__(self):

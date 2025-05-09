@@ -1,15 +1,15 @@
 from .las import LAS
 import numpy as np
-from toolkit.cars.car_configuration import Car
-# from numba import njit
+from toolkit.cars import Car
+from numba import njit
 from toolkit.common.constants import *
 import time
 from typing import List
 from .loss_funcs import lat_loss_func, yaw_loss_func
 import plotly.graph_objs as go
-from toolkit.common.maths import skew, is_point_in_triangle, db_for_point_in_triangle
+from toolkit.common import skew, is_point_in_triangle, db_for_point_in_triangle
 
-# @njit
+@njit
 def calc_vel(c_0, c_1, c_2, v_min = 0.1):
     # Solve the quadratic equation for the velocity because the numpy roots function is slow af
     v_1 = np.real((np.sqrt(c_1**2 - (4 * c_2 * c_0)) - c_1) / (2 * c_2))
@@ -56,7 +56,7 @@ def solve_point(aymax, yawmax, longAcc, v_k, v_j, ds, k_k, k_j, bd_k, bd_j, beta
             return v_it, latAcc_it, longAcc_it, omegadot_it, 0.0, delta_it, beta_it, False
     return min(max_vel, v_j), 0.0, 0.0, 0.0, 0.0, 0.0, beta_j, False
 
-# @njit
+@njit
 def interp_LAS_corner(vel, vels, point_arr):
     """
     Interpolate the LAS corner points to get the correct point for the current velocity

@@ -1,15 +1,16 @@
 from .las import LAS
 import numpy as np
-from toolkit.cars.car_configuration import Car
-# from numba import njit
+from toolkit.cars import Car
+from numba import njit
 from toolkit.common.constants import *
 import time
 from typing import List
 from .loss_funcs import lat_loss_func, yaw_loss_func
 import plotly.graph_objs as go
-from toolkit.common.maths import skew, is_point_in_triangle, db_for_point_in_triangle
+from toolkit.common import skew, is_point_in_triangle, db_for_point_in_triangle
+from typing import Tuple
 
-# @njit
+@njit
 def calc_vel(c_0, c_1, c_2, v_min = 0.1):
     # Solve the quadratic equation for the velocity because the numpy roots function is slow af
     v_1 = np.real((np.sqrt(c_1**2 - (4 * c_2 * c_0)) - c_1) / (2 * c_2))
@@ -64,7 +65,7 @@ def solve_point(aymax, yawmax, longAcc, facets, v_k, v_j, ds, k_k, k_j, bd_k, bd
                 return v_it, latAcc_it, longAcc_it, omegadot_it, 0.0, delta_it, beta_it, False
     return min(max_vel, v_j, min_v_it), 0.0, 0.0, 0.0, 0.0, 0.0, beta_j, False
 
-# @njit
+@njit
 def interp_LAS_corner(vel, vels, point_arr):
     """
     Interpolate the LAS corner points to get the correct point for the current velocity
@@ -76,8 +77,8 @@ def interp_LAS_corner(vel, vels, point_arr):
     b = np.interp(vel, vels, point_arr[:, 4])
     return np.array([x, y, z, d, b])
 
-# @njit
-def interp_LAS_surface(vel, vels, point_arr):
+@njit
+def interp_LAS_surface(vel: float, vels: np.ndarray, point_arr: np.ndarray) -> np.ndarray:
     """
     Interpolate the LAS corner points to get the correct point for the current velocity
     """
@@ -245,8 +246,8 @@ class Multi_Layer_LAS(LAS):
         # beta_ay, delta_ay, beta_yaw, delta_yaw = 0, 0, 0, 0
         for i, long_g in enumerate(self.long_acc_layers[ind]):
             beta_ay, delta_ay, beta_yaw, delta_yaw = 0, -5, 0, 0
-            delta_ay, beta_ay, aymax_ay, yawmax_ay, ax_ay, itt_ay, vp_ay, _, _ = self.find_limit(car, v_avg, long_g, lat_loss_func, delta_lim=30.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_ay, d_guess=delta_ay)
-            delta_yaw, beta_yaw, aymax_yaw, yawmax_yaw, ax_yaw, itt_yaw, vp_yaw, _, _ = self.find_limit(car, v_avg, long_g, yaw_loss_func, delta_lim=30.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_yaw, d_guess=delta_yaw)
+            delta_ay, beta_ay, aymax_ay, yawmax_ay, ax_ay, itt_ay, vp_ay, _, _ = self.find_limit(car, v_avg, long_g, lat_loss_func, delta_lim=120.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_ay, d_guess=delta_ay)
+            delta_yaw, beta_yaw, aymax_yaw, yawmax_yaw, ax_yaw, itt_yaw, vp_yaw, _, _ = self.find_limit(car, v_avg, long_g, yaw_loss_func, delta_lim=120.0, beta_lim=25.0, use_drag=use_drag, mu=mu_corr, b_guess=beta_yaw, d_guess=delta_yaw)
 
         
             if car.debug:

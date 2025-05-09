@@ -3,14 +3,17 @@ name = "Oncle-LapSim"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
+    "bayesian-optimization>=2.0.3",
     "csaps>=1.2.0",
     "ipykernel>=6.29.5",
     "ipywidgets>=8.1.5",
+    "jax>=0.5.1",
     "llvmlite>=0.44.0",
     "matplotlib>=3.10.0",
     "maturin>=1.8.2",
     "mcap>=1.2.2",
     "nbformat>=5.10.4",
+    "numba>=0.61.2",
     "numpy>=2.2.3",
     "opencv-python>=4.11.0.86",
     "pandas>=2.2.3",
@@ -35,14 +38,17 @@ members = ["packages/*"]
 [tool.uv.sources]
 torch = [
   { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  # { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
   { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
 ]
 torchvision = [
   { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  # { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
   { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
 ]
 torchaudio = [
   { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  # { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
   { index = "pytorch-cpu", marker = "sys_platform == 'darwin'" },
 ]
 

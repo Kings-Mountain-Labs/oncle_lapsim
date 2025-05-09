@@ -2,7 +2,7 @@ import numpy as np
 from .channels import Channel
 import pymap3d as pm
 from csaps import csaps
-from toolkit.common.maths import clean_interp
+from toolkit.common import clean_interp
 
 class GPS:
     start_time: float  # this is the gps time at which the time series datum is

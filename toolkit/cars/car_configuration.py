@@ -1,12 +1,10 @@
 import numpy as np
-from toolkit.tire_model.tire_model_utils import H_R20_18X6_7
-from toolkit.tire_model.tire_model_pacejka_2010 import tire_model_from_arr
+from toolkit.tire_model import H_R20_18X6_7, tire_model_from_arr, get_rs_pacejka
 import plotly.graph_objs as go
 import time
 from toolkit.common.constants import *
-from toolkit.tire_model.fast_pacejka import get_rs_pacejka
 from scipy.optimize import minimize, OptimizeResult
-from toolkit.common.maths import vel_at_tire, clip, to_vel_frame, to_car_frame
+from toolkit.common import vel_at_tire, clip, to_vel_frame, to_car_frame
 
 def loss_func_two(bd, car, ay_targ, vel, mu_corr, sr_lim):
     ay, yaw, ax, bruh = car.solve_for_yaw(ay_targ, vel, bd[0], bd[1], mu_corr, sr_lim=sr_lim)
@@ -75,7 +73,7 @@ class Car:
         self.hu_r = self.hu_f
 
         self.power = 80000
-        self.max_torque = 165
+        self.max_torque = 240
         self.drive_ratio = 4.1 # cock and balls
 
         self.pedal_force = 75 * LB_TO_KG * G # force applied to pedal in N
@@ -132,7 +130,7 @@ class Car:
         else:
             drag = 0.0
         omega = vel / self.mf_tire.UNLOADED_RADIUS * self.drive_ratio
-        torque = min((self.power/((omega**3) / (self.power / self.max_torque)**2)), self.max_torque)
+        torque = min(self.power / omega, self.max_torque)
         return (torque / self.mf_tire.UNLOADED_RADIUS * self.drive_ratio) - drag
 
     # All the braking functions are based on the this google sheet that Ross made
@@ -270,10 +268,10 @@ class Car:
         # this makes a ton of sense in the car coordinate system, but in the tire coordinate system the velocity vector isn't our datum
         # So you need to negate the delta angle to get the correct sign for the SAE sign convention that the tire model uses
         # based on equation 1.3 in the third edition of tyre and vehicle dynamics by pacejka
-        alpha_FL = np.arctan((V * np.sin(beta) + (omega * self.a)) / (V * np.cos(beta) + (omega * self.front_track / 2))) - delta_FL
-        alpha_FR = np.arctan((V * np.sin(beta) + (omega * self.a)) / (V * np.cos(beta) - (omega * self.front_track / 2))) - delta_FR
-        alpha_RL = np.arctan((V * np.sin(beta) - (omega * self.b)) / (V * np.cos(beta) + (omega * self.rear_track / 2))) - delta_RL
-        alpha_RR = np.arctan((V * np.sin(beta) - (omega * self.b)) / (V * np.cos(beta) - (omega * self.rear_track / 2))) - delta_RR
+        alpha_FL = np.atan2(V * np.sin(beta) + (omega * self.a), V * np.cos(beta) + (omega * (self.front_track / 2))) - delta_FL
+        alpha_FR = np.atan2(V * np.sin(beta) + (omega * self.a), V * np.cos(beta) - (omega * (self.front_track / 2))) - delta_FR
+        alpha_RL = np.atan2(V * np.sin(beta) - (omega * self.b), V * np.cos(beta) + (omega * (self.rear_track / 2))) - delta_RL
+        alpha_RR = np.atan2(V * np.sin(beta) - (omega * self.b), V * np.cos(beta) - (omega * (self.rear_track / 2))) - delta_RR
         return alpha_FL, alpha_FR, alpha_RL, alpha_RR
 
     def calculate_vel_at_tire(self, v, omega, beta):
@@ -406,11 +404,49 @@ class Car:
     def s_r_sel(self, f_z, s_a, i_a, v, fx_targ, flip_s_a=False, upper=0.2, lower=-0.3, p: float = 82500, non_driven=False, mu_corr: float = 1.0):
         if self.fast_mf == None:
             return self.s_r(f_z, s_a, v, fx_targ, i_a=i_a, non_driven=non_driven, upper=upper, lower=lower, og_lower=lower, og_upper=upper, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
+            # return self.s_r_minimize(f_z, s_a, v, fx_targ, i_a=i_a, non_driven=non_driven, upper=upper, lower=lower, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
         else:
             # print(f"{f_z}, {s_a}, {upper:.2f}, {lower:.2f}, {upper:.2f}, {lower:.2f}, 0.0, 0.0, 0.0, {p}, {i_a}, {v}, 0.0, 0.0, {mu_corr}, {flip_s_a}, {non_driven}, {fx_targ}, 0")
             kappa_a, bam_a, fx_a = self.fast_mf.s_r(f_z, s_a, upper, lower, upper, lower, 0.0, 0.0, 0.0, p, i_a, v, 0.0, 0.0, mu_corr, flip_s_a, non_driven, fx_targ, 0)
             # print(f"kappa_a: {kappa_a:.3f}, bam_a: {bam_a}, fx_a: {fx_a:.3f}")
             return kappa_a, bam_a, fx_a
+
+    def s_r_minimize(self, f_z, s_a, v_avg, fx_target, i_a=0.0, upper=0.2, lower=-0.3, p: float = 82500, non_driven=False, flip_s_a=False, mu_corr: float = 1.0):
+        """
+        Solves for the slip ratio of a single tire using scipy's minimize function to find the slip ratio
+        that produces the target longitudinal force (fx_target).
+        """
+        if (fx_target > 0 and non_driven):
+            _, actual_fx, _ = self.steady_state_mmd(f_z, s_a, 0.0, v_avg, i_a, 0.0, flip_s_a=flip_s_a, mu=mu_corr, no_long_include=True, p=p)
+            return 0.0, False, actual_fx
+        
+        if f_z <= 0.0:
+            return 0.0, False, 0.0
+
+        def objective(kappa):
+            # Function to minimize - difference between achieved and target Fx
+            _, fx, _ = self.steady_state_mmd(f_z, s_a, kappa, v_avg, i_a, 0.0, flip_s_a=flip_s_a, mu=mu_corr, p=p)
+            return (fx - fx_target) ** 2
+
+        # Initial guess - start from zero slip ratio
+        x0 = 0.0
+        
+        # Bounds for slip ratio
+        bounds = [(lower, upper)]
+        
+        # Minimize the objective function
+        result = minimize(objective, x0, method='L-BFGS-B', bounds=bounds)
+        
+        # Get the optimal slip ratio
+        optimal_kappa = result.x[0]
+        
+        # Calculate the actual force achieved at the optimal slip ratio
+        _, fx, _ = self.steady_state_mmd(f_z, s_a, optimal_kappa, v_avg, i_a, 0.0, flip_s_a=flip_s_a, mu=mu_corr, p=p)
+        
+        # Check if we're at the limits (saturated)
+        is_saturated = abs(optimal_kappa - upper) < 1e-6 or abs(optimal_kappa - lower) < 1e-6
+        
+        return optimal_kappa, is_saturated, fx
 
     def s_r(self, f_z, s_a, v_avg, fx_target, i_a = 0.0, upper = 0.2, lower = -0.3, og_upper = 0.2, og_lower = -0.3, kappa=0.0, prev_kappa=0.0, prev_fx=0.0, i=0, p: float = 82500, non_driven=False, flip_s_a=False, mu_corr: float = 1.0):
         """
@@ -422,12 +458,12 @@ class Car:
             return 0.0, False, actual_fx
         if f_z <= 0.0:
             return 0.0, False, 0.0
-        if i > 20:
+        if i > 40:
             return prev_kappa, False, prev_fx
         # first we solve for 3 points with a small offset of b from our slip ratio kappa to get the first and second derivatives
         # here is what is going on here https://mathformeremortals.wordpress.com/2013/01/12/a-numerical-second-derivative-from-three-points/
-        b = 0.0001
-        d_kappa = 0.001
+        b = 1e-9
+        d_kappa = 1e-9
         kappas = np.array([kappa - b, kappa, kappa + b])
         if self.fast_mf == None:
             fx, _, _ = self.mf_tire.s_r_sweep(f_z, s_a, kappas, i_a=i_a, v=v_avg, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
@@ -453,10 +489,11 @@ class Car:
             if i == 0:
                 print(f"{f_z:.1f} BAD TIRE MODEL: NEGATIVE FX-SL SLOPE AT SL=0")
 
-        if abs(new_kappa - kappa) < 0.0001 or abs(fx_target - fx_2) < 0.1:
+        if abs(new_kappa - kappa) < 1e-9:
             maxima = (new_kappa > upper - d_kappa) or (new_kappa < lower + d_kappa) or ((np.sign(fx_2 - fx_3) == np.sign(fx_2)) and (np.sign(fx_2 - fx_1) == np.sign(fx_2)))
             # if maxima: print(f"{f_z:.1f} MAXIMA")
-            return new_kappa, maxima, fx_2
+            fx_return, _, _ = self.mf_tire.steady_state_mmd(f_z, s_a, new_kappa, i_a=i_a, v=v_avg, flip_s_a=flip_s_a, mu_corr=mu_corr, p=p)
+            return new_kappa, maxima, fx_return
         if (kappa == og_upper and new_kappa > og_upper) or (kappa == og_lower and new_kappa < og_lower):
             # print(f"{f_z:.1f} LIMS")
             return kappa, True, fx_2
