@@ -1,9 +1,10 @@
 # oncle-lapsim
-A lap time simulation and vehicle dynamics toolbox made by people who like Oncle Jazz by Men I Trust
+An unfinished lap time simulation and vehicle dynamics toolbox made by people who like Oncle Jazz by Men I Trust
 
-This project originates from Arash Mehdipour's[^1] Matlab implementation of Chris Patton's 2013 PhD dissertation[^2], which I (Ian Rist) [^1] then ported to python and greatly extended. This toolbox also includes a Magic-Formula Tire model which is based on the Matlab implementation by Marco Furlan [^3].
+This project originates from (ง •̀_•́)ง's[^1] Matlab implementation of Chris Patton's 2013 PhD dissertation[^2], which I (Ian[^1]) then ported to python and greatly extended. This toolbox also includes a Magic-Formula Tire model which is based on the Matlab implementation by Marco Furlan [^3].
+There are 3 guiding objectives for this project: It should be reasonably extendable in a Theseus Ship fashion, It should be easily installed and run by someone with only a basic understanding of python, and It should be reasonably fast.
 
-[^1]: Spartan Racing, San Jose State University Formula SAE
+[^1]: Politburo, Spartan Racing, San Jose State University Formula SAE
 
 [^2]: [Development of vehicle dynamics tools for motorsports](ir.library.oregonstate.edu/concern/graduate_thesis_or_dissertations/tx31qm51z)
 
@@ -12,7 +13,7 @@ This project originates from Arash Mehdipour's[^1] Matlab implementation of Chri
 # Getting Started
 This getting started guide uses the Github CLI to clone the repository because we have tended to find that it is the easiest way to get new git users correctly configured.
 
-## Installation  <span style="color:red">FOLLOW THIS IN ORDER</span>
+## Installation Guide
 1. Dependencies
     - [Install VS Code](https://code.visualstudio.com/download)
     - [Install Git for Windows](https://git-scm.com/downloads)
