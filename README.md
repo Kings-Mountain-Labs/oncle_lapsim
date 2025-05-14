@@ -35,21 +35,25 @@ This getting started guide uses the Github CLI to clone the repository because w
     - And `code .` to open VS Code in the repository
 3. Install the dependencies
     - Open a terminal (in VS Code) in the folder you cloned to
-```console
-uv sync
-```
+
+    ```shell
+    uv sync
+    ```
     - The first time you do this you will invalidate your current terminal (vs-code will make it orange) and you just need to make a new terminal
+
     - Now, in vscode, press Cmd+Shift+P and type "Python: Select Interpreter" and select the virtual environment in (.venv)
-    
+
     - Building the Tire Model Improvements (not needed for the simulation to run, but causes dramatic performance improvements)
         - Create a new terminal in VS Code
         - Change directories to the folder with the tire model lib
-```console
-cd toolkit/pacejka_rs/
-```
+
+        ```shell
+        cd toolkit/pacejka_rs/
+        ```
         - Compile the Rust libraries (this will take a while the first time and you will need to do it whenever I have updated the rust code)
-```console
-maturin develop --release
-```
+
+        ```shell
+        maturin develop --release
+        ```
         - You should see a bunch of stuff about compiling and linking and then it should say `Build succeeded, installing package`
         - Now you can close the terminal
