@@ -166,6 +166,7 @@ data/tire_data/*.dat
 data/tire_data/*.mat
 data/lap_data/*.mat
 !data/lap_data/2017_Michigan_Skid_Accel_AutoX_Lap3.mat
+
 *.mapbox_token
 */.DS_Store
 .DS_Store
